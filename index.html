@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ระบบข้อมูลพนักงาน</title>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif; padding: 20px; background-color: #f9f9f9; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 15px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #4CAF50; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        a.map-link { color: #0066cc; text-decoration: none; font-weight: bold; }
+        a.map-link:hover { text-decoration: underline; }
+        button.update-btn { background-color: #2196F3; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-bottom: 15px; }
+        button.update-btn:hover { background-color: #0b7dda; }
+
+        /* เมนู Tabs */
+        .tab-menu { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 15px; flex-wrap: wrap; }
+        .tab-btn { background-color: #e0e0e0; color: #333; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
+        .tab-btn.active { background-color: #4CAF50; color: white; }
+        .tab-btn:hover:not(.active) { background-color: #ccc; }
+        
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .summary-box { background-color: #e8f5e9; border-left: 6px solid #4CAF50; padding: 15px; margin-bottom: 20px; font-size: 18px; border-radius: 4px; }
+        .count-number { color: #2e7d32; font-size: 26px; font-weight: bold; margin: 0 10px; }
+        
+        /* ฟอร์มลางาน */
+        .leave-form-container { background: #fff3e0; border: 1px solid #ffe0b2; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
+        .submit-btn { background-color: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .submit-btn:hover { background-color: #e65100; }
+
+        #calendar-container { margin-top: 20px; background: white; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="tab-menu">
+            <button class="tab-btn active" onclick="switchTab('page-all', this)">📋 ประวัติทั้งหมด</button>
+            <button class="tab-btn" onclick="switchTab('page-today', this)">👥 เข้างานวันนี้</button>
+            <button class="tab-btn" onclick="switchTab('page-search', this)">📅 ค้นหาตามวันที่</button>
+            <button class="tab-btn" onclick="switchTab('page-calendar', this)">🏖️ ระบบแจ้งลา & ปฏิทิน</button>
+        </div>
+
+        <button class="update-btn" onclick="loadData()">🔄 โหลดข้อมูลล่าสุด</button>
+
+        <div id="page-all" class="page active">
+            <h2>ประวัติการลงเวลาทำงานทั้งหมด</h2>
+            <table>
+                <thead>
+                    <tr><th>ชื่อพนักงาน</th><th>สถานะ</th><th>วันและเวลา</th><th>สถานที่</th></tr>
+                </thead>
+                <tbody id="table-all"><tr><td colspan="4" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr></tbody>
+            </table>
+        </div>
+
+        <div id="page-today" class="page">
+            <h2>พนักงานที่เข้างานวันนี้ (<span id="today-date-text"></span>)</h2>
+            <div class="summary-box">วันนี้มาทำงาน: <span id="today-count" class="count-number">0</span> คน</div>
+            <table>
+                <thead>
+                    <tr><th style="width: 10%;">ลำดับ</th><th>ชื่อพนักงาน</th><th>เวลาเข้างาน</th></tr>
+                </thead>
+                <tbody id="table-today"></tbody>
+            </table>
+        </div>
+
+        <div id="page-search" class="page">
+            <h2>เช็คคนเข้างานตามวันที่</h2>
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 16px; font-weight: bold;">เลือกวันที่ต้องการดู: </label>
+                <input type="date" id="search-date-input" onchange="filterByDate()" style="padding: 8px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc;">
+            </div>
+            <div class="summary-box">วันที่เลือกมีคนมาทำงาน: <span id="search-count" class="count-number">0</span> คน</div>
+            <table>
+                <thead>
+                    <tr><th style="width: 10%;">ลำดับ</th><th>ชื่อพนักงาน</th><th>เวลาเข้างาน</th></tr>
+                </thead>
+                <tbody id="table-search">
+                    <tr><td colspan="3" style="text-align: center;">กรุณาเลือกวันที่ด้านบนเพื่อดูข้อมูล</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="page-calendar" class="page">
+            <div class="leave-form-container">
+                <h3>✍️ ฟอร์มยื่นใบลาพนักงาน</h3>
+                <form id="leaveForm" onsubmit="submitLeave(event)">
+                    <div class="form-group">
+                        <label>ชื่อพนักงาน:</label>
+                        <input type="text" id="leave-name" required placeholder="ระบุชื่อ-นามสกุล">
+                    </div>
+                    <div class="form-group">
+                        <label>ประเภทการลา:</label>
+                        <select id="leave-type" required>
+                            <option value="ลาป่วย">ลาป่วย 🤒</option>
+                            <option value="ลากิจ">ลากิจ 💼</option>
+                            <option value="ลาพักร้อน">ลาพักร้อน 🏖️</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label>วันที่เริ่มลา:</label>
+                            <input type="date" id="leave-start" required>
+                        </div>
+                        <div style="flex: 1;">
+                            <label>ถึงวันที่ (ลา 1 วันให้เลือกวันเดียวกัน):</label>
+                            <input type="date" id="leave-end" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn">📤 ส่งใบลา</button>
+                </form>
+            </div>
+
+            <h2>📅 ปฏิทินวันลาพนักงาน</h2>
+            <div id="calendar-container"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // เปลี่ยน URL ตรงนี้เป็น Web App URL ของคุณที่ได้จากการ Deploy ล่าสุด
+// ค้นหาบรรทัดนี้ใน index.html แล้ววางลิงก์ของคุณลงไปในเครื่องหมายคำพูด ""
+const API_URL = "https://script.google.com/macros/s/AKfycbx7U7--gclJrJ9UgsyMeJvS1XtpnfFnke5UwfYKr26mBVNqVVMZSkaWh_dL4Od7C3CK/exec";        
+        let globalAttendanceData = []; 
+        let globalLeaveData = []; 
+        let calendarInstance = null; 
+
+        function switchTab(pageId, btnElement) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(pageId).classList.add('active');
+            btnElement.classList.add('active');
+
+            if (pageId === 'page-calendar' && calendarInstance) {
+                setTimeout(() => { calendarInstance.render(); }, 100);
+            }
+        }
+
+        async function loadData() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                if (Array.isArray(data)) {
+                    globalAttendanceData = data.reverse();
+                    globalLeaveData = [];
+                } else {
+                    globalAttendanceData = data.attendance ? data.attendance.reverse() : [];
+                    globalLeaveData = data.leave || [];
+                }
+
+                renderAllData();
+                renderTodayData();
+                renderCalendar();
+            } catch (error) {
+                console.error("Error:", error);
+            }
+        }
+
+        function renderAllData() {
+            const tbody = document.getElementById("table-all");
+            tbody.innerHTML = "";
+            globalAttendanceData.forEach(row => {
+                if(!row['เจ้าของ']) return;
+                tbody.innerHTML += `<tr>
+                    <td>${row['เจ้าของ']}</td> 
+                    <td>${row['ประเภทกิจกรรม']}</td>
+                    <td>${row['เวลาเริ่มต้น']}</td>
+                    <td><a href="${row['สถานที่']}" target="_blank" class="map-link">📍 ดูแผนที่</a></td>
+                </tr>`;
+            });
+        }
+
+        function renderTodayData() {
+            const d = new Date();
+            const todayString = d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear(); 
+            document.getElementById("today-date-text").innerText = todayString;
+            processAttendanceByDate(todayString, "table-today", "today-count");
+        }
+
+        function filterByDate() {
+            const dateInput = document.getElementById("search-date-input").value;
+            if(!dateInput) return;
+            const d = new Date(dateInput);
+            const searchString = d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear(); 
+            processAttendanceByDate(searchString, "table-search", "search-count");
+        }
+
+        function processAttendanceByDate(dateString, tableId, countId) {
+            let count = 0;
+            let peopleSet = new Set(); 
+            let tableHTML = "";
+
+            globalAttendanceData.forEach(row => {
+                if(!row['เจ้าของ']) return;
+                const rowDate = row['เวลาเริ่มต้น'] ? row['เวลาเริ่มต้น'].split(',')[0].trim() : '';
+
+                if(rowDate === dateString && !peopleSet.has(row['เจ้าของ'])) {
+                    peopleSet.add(row['เจ้าของ']);
+                    count++;
+                    const timeOnly = row['เวลาเริ่มต้น'].split(',')[1] ? row['เวลาเริ่มต้น'].split(',')[1].trim() : row['เวลาเริ่มต้น'];
+                    tableHTML += `<tr><td style="text-align: center;">${count}</td><td>${row['เจ้าของ']}</td><td>${timeOnly}</td></tr>`;
+                }
+            });
+
+            document.getElementById(countId).innerText = count;
+            document.getElementById(tableId).innerHTML = count === 0 
+                ? `<tr><td colspan='3' style='text-align: center;'>ไม่มีประวัติการเข้างานในวันที่ ${dateString}</td></tr>` 
+                : tableHTML;
+        }
+
+        async function submitLeave(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById("leave-name").value;
+            const type = document.getElementById("leave-type").value;
+            const startDate = document.getElementById("leave-start").value;
+            let endDate = document.getElementById("leave-end").value;
+
+            let end = new Date(endDate);
+            end.setDate(end.getDate() + 1);
+            let calendarEndDate = end.toISOString().split('T')[0];
+
+            const payload = {
+                action: "submitLeave",
+                name: name,
+                type: type,
+                startDate: startDate,
+                endDate: calendarEndDate
+            };
+
+            alert("กำลังส่งข้อมูลการลาลงระบบ...");
+
+            try {
+                await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                
+                alert("🎉 บันทึกวันลาลงชีตใหม่สำเร็จ!");
+                document.getElementById("leaveForm").reset();
+                loadData(); 
+            } catch (error) {
+                console.error("Error:", error);
+                alert("เกิดข้อผิดพลาดในการเชื่อมต่อระบบ");
+            }
+        }
+
+        function renderCalendar() {
+            const calendarEl = document.getElementById('calendar-container');
+            
+            const colorMap = {
+                'ลาป่วย': '#f44336',
+                'ลากิจ': '#ff9800',
+                'ลาพักร้อน': '#4caf50'
+            };
+
+            const eventsArray = globalLeaveData.map(row => {
+                return {
+                    title: row['ชื่อพนักงาน'] + ' (' + row['ประเภทการลา'] + ')',
+                    start: row['วันที่เริ่มลา'], 
+                    end: row['ถึงวันที่'],
+                    color: colorMap[row['ประเภทการลา']] || '#9e9e9e'
+                };
+            });
+
+            if (calendarInstance) { calendarInstance.destroy(); }
+
+            calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'th',
+                events: eventsArray
+            });
+            calendarInstance.render();
+        }
+
+        window.onload = loadData;
+    </script>
+</body>
+</html>
