@@ -38,12 +38,13 @@
             border-radius: 16px; 
             box-shadow: 0 10px 40px rgba(10, 37, 64, 0.08); 
             border-top: 6px solid var(--theme-gold);
+            box-sizing: border-box;
         }
 
-        h2 { color: var(--theme-blue); margin-top: 0; font-weight: 700; }
-        h3 { color: var(--theme-blue); font-weight: 600; }
+        h2 { color: var(--theme-blue); margin-top: 0; font-weight: 700; font-size: 24px; }
+        h3 { color: var(--theme-blue); font-weight: 600; font-size: 20px; }
 
-        /* 🔘 เมนู Tabs (สไตล์พรีเมียม) */
+        /* 🔘 เมนู Tabs */
         .tab-menu { 
             display: flex; 
             gap: 8px; 
@@ -57,14 +58,15 @@
             background-color: transparent; 
             color: var(--text-muted); 
             border: none; 
-            padding: 12px 20px; 
+            padding: 12px 15px; 
             border-radius: 8px; 
             cursor: pointer; 
-            font-size: 15px; 
+            font-size: 14px; 
             font-weight: 500; 
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
             flex: 1;
-            min-width: 150px;
+            min-width: 130px;
+            text-align: center;
         }
         .tab-btn.active { 
             background-color: var(--theme-blue); 
@@ -94,17 +96,28 @@
             border-bottom: 1px solid var(--border-color);
             padding: 15px 20px; 
             margin-bottom: 20px; 
-            font-size: 18px; 
+            font-size: 16px; 
             border-radius: 8px; 
             display: flex;
             align-items: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            flex-wrap: wrap;
         }
         .count-number { 
             color: var(--theme-blue); 
-            font-size: 28px; 
+            font-size: 26px; 
             font-weight: 700; 
             margin: 0 10px; 
+        }
+
+        /* 📝 ตัวครอบตารางหลบหน้าจอพังในมือถือ */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-top: 10px;
         }
 
         /* 📝 ตารางข้อมูล */
@@ -112,21 +125,18 @@
             width: 100%; 
             border-collapse: separate; 
             border-spacing: 0; 
-            margin-top: 10px; 
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
         }
         .data-table th, .data-table td { 
-            padding: 15px; 
+            padding: 12px 15px; 
             text-align: left; 
             border-bottom: 1px solid var(--border-color); 
+            white-space: nowrap; 
         }
         .data-table th { 
             background-color: var(--theme-blue); 
             color: var(--theme-gold); 
             font-weight: 600; 
-            font-size: 15px;
+            font-size: 14px;
             letter-spacing: 0.5px;
         }
         .data-table tbody tr { transition: background-color 0.2s ease; }
@@ -140,9 +150,10 @@
             background: var(--theme-gold-light);
             padding: 6px 12px;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 13px;
             transition: 0.3s;
             border: 1px solid #eee;
+            display: inline-block;
         }
         a.map-link:hover { background: var(--theme-gold); color: var(--theme-blue); }
 
@@ -159,6 +170,10 @@
             font-weight: 600;
             transition: all 0.2s ease;
             box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            width: 100%; 
+        }
+        @media (min-width: 576px) {
+            button.update-btn { width: auto; } 
         }
         button.update-btn:hover { 
             background-color: var(--theme-gold); 
@@ -169,13 +184,13 @@
         .leave-form-container { 
             background: #ffffff; 
             border: 1px solid var(--theme-gold); 
-            padding: 25px; 
+            padding: 20px; 
             border-radius: 12px; 
             margin-bottom: 30px; 
             box-shadow: 0 4px 20px rgba(212, 175, 55, 0.08);
             position: relative;
+            box-sizing: border-box;
         }
-        /* เส้นตกแต่งฟอร์ม */
         .leave-form-container::before {
             content: '';
             position: absolute;
@@ -184,11 +199,11 @@
             border-top-left-radius: 12px;
             border-top-right-radius: 12px;
         }
-        .form-group { margin-bottom: 18px; }
+        .form-group { margin-bottom: 15px; }
         .form-group label { 
             display: block; 
             font-weight: 600; 
-            margin-bottom: 8px; 
+            margin-bottom: 6px; 
             color: var(--theme-blue);
             font-size: 14px;
         }
@@ -209,6 +224,17 @@
             box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
             background: #fff;
         }
+        
+        /* สลับแถววันลาคู่ตามขนาดจอ */
+        .form-row-dates {
+            display: flex;
+            gap: 15px;
+            flex-direction: column; 
+        }
+        @media (min-width: 576px) {
+            .form-row-dates { flex-direction: row; } 
+        }
+
         .submit-btn { 
             background-color: var(--theme-gold); 
             color: var(--theme-blue); 
@@ -233,15 +259,26 @@
         #calendar-container { 
             margin-top: 20px; 
             background: white; 
-            padding: 15px; 
+            padding: 10px; 
             border: 1px solid var(--border-color); 
             border-radius: 12px; 
             box-shadow: 0 2px 15px rgba(0,0,0,0.03);
+            font-size: 13px; 
         }
-        /* ปรับแต่งปุ่มปฏิทินให้เป็นสีน้ำเงิน */
-        .fc .fc-button-primary { background-color: var(--theme-blue) !important; border-color: var(--theme-blue) !important; border-radius: 6px; font-family: 'Sarabun';}
+        .fc .fc-button-primary { background-color: var(--theme-blue) !important; border-color: var(--theme-blue) !important; border-radius: 6px; font-family: 'Sarabun'; padding: 6px 10px; font-size: 12px; }
         .fc .fc-button-primary:hover { background-color: var(--theme-blue-hover) !important; }
-        .fc .fc-toolbar-title { color: var(--theme-blue); font-weight: 700; }
+        .fc .fc-toolbar-title { color: var(--theme-blue); font-weight: 700; font-size: 16px !important; }
+
+        /* 📱 จัดการสเกลเพิ่มเติมเมื่อเปิดในมือถือจอเล็ก */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 15px; border-radius: 12px; }
+            h2 { font-size: 18px; }
+            h3 { font-size: 16px; }
+            .tab-btn { padding: 10px; font-size: 13px; }
+            .summary-box { font-size: 14px; padding: 12px; }
+            .count-number { font-size: 22px; }
+        }
     </style>
 </head>
 <body>
@@ -258,23 +295,27 @@
 
         <div id="page-all" class="page active">
             <h2>ประวัติการลงเวลาทำงานทั้งหมด</h2>
-            <table class="data-table">
-                <thead>
-                    <tr><th>ชื่อพนักงาน</th><th>สถานะ</th><th>วันและเวลา</th><th>สถานที่</th></tr>
-                </thead>
-                <tbody id="table-all"><tr><td colspan="4" style="text-align: center; color: #888;">กำลังโหลดข้อมูล... ⏳</td></tr></tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>ชื่อพนักงาน</th><th>สถานะ</th><th>วันและเวลา</th><th>สถานที่</th></tr>
+                    </thead>
+                    <tbody id="table-all"><tr><td colspan="4" style="text-align: center; color: #888;">กำลังโหลดข้อมูล... ⏳</td></tr></tbody>
+                </table>
+            </div>
         </div>
 
         <div id="page-today" class="page">
             <h2>พนักงานที่เข้างานวันนี้ (<span id="today-date-text"></span>)</h2>
             <div class="summary-box">🎉 วันนี้มีคนมาทำงานแล้ว <span id="today-count" class="count-number">0</span> คน</div>
-            <table class="data-table">
-                <thead>
-                    <tr><th style="width: 15%;">ลำดับ</th><th>ชื่อพนักงาน</th><th>เวลาเข้างาน</th></tr>
-                </thead>
-                <tbody id="table-today"></tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr><th style="width: 15%;">ลำดับ</th><th>ชื่อพนักงาน</th><th>เวลาเข้างาน</th></tr>
+                    </thead>
+                    <tbody id="table-today"></tbody>
+                </table>
+            </div>
         </div>
 
         <div id="page-search" class="page">
@@ -286,14 +327,16 @@
                 </div>
             </div>
             <div class="summary-box">📌 วันที่เลือกมีคนมาทำงาน <span id="search-count" class="count-number">0</span> คน</div>
-            <table class="data-table">
-                <thead>
-                    <tr><th style="width: 15%;">ลำดับ</th><th>ชื่อพนักงาน</th><th>เวลาเข้างาน</th></tr>
-                </thead>
-                <tbody id="table-search">
-                    <tr><td colspan="3" style="text-align: center; color: #888;">👆 กรุณาเลือกวันที่ด้านบนเพื่อดูข้อมูล</td></tr>
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr><th style="width: 15%;">ลำดับ</th><th>ชื่อพนักงาน</th><th>เวลาเข้างาน</th></tr>
+                    </thead>
+                    <tbody id="table-search">
+                        <tr><td colspan="3" style="text-align: center; color: #888;">👆 กรุณาเลือกวันที่ด้านบนเพื่อดูข้อมูล</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <div id="page-calendar" class="page">
@@ -312,13 +355,13 @@
                             <option value="ลาพักร้อน">🏖️ ลาพักร้อน</option>
                         </select>
                     </div>
-                    <div class="form-group" style="display: flex; gap: 15px;">
-                        <div style="flex: 1;">
+                    <div class="form-row-dates">
+                        <div class="form-group" style="flex: 1;">
                             <label>วันที่เริ่มลา:</label>
                             <input type="date" id="leave-start" required>
                         </div>
-                        <div style="flex: 1;">
-                            <label>ถึงวันที่ (ลา 1 วันให้เลือกวันเดิม):</label>
+                        <div class="form-group" style="flex: 1;">
+                            <label>ถึงวันที่ (ลา 1 วันเลือกวันเดิม):</label>
                             <input type="date" id="leave-end" required>
                         </div>
                     </div>
@@ -333,7 +376,7 @@
     </div>
 
     <script>
-        // เปลี่ยน URL ตรงนี้เป็น Web App URL ของคุณที่ได้จากการ Deploy ล่าสุด
+        // ใส่ URL ที่คุณแก้ไขเรียบร้อยแล้วตรงนี้
         const API_URL = "https://script.google.com/macros/s/AKfycbx7U7--gclJrJ9UgsyMeJvS1XtpnfFnke5UwfYKr26mBVNqVVMZSkaWh_dL4Od7C3CK/exec";        
         
         let globalAttendanceData = []; 
@@ -354,7 +397,7 @@
 
         async function loadData() {
             try {
-                const response = await fetch(API_URL);
+                const response = await fetch(API_URL + "?type=json");
                 const data = await response.json();
                 
                 if (Array.isArray(data)) {
@@ -465,11 +508,10 @@
         function renderCalendar() {
             const calendarEl = document.getElementById('calendar-container');
             
-            // ปรับสีในปฏิทินให้เข้ากับธีม น้ำเงิน-ทอง
             const colorMap = {
-                'ลาป่วย': '#E74C3C',    // สีแดง (ให้เห็นชัดเจนว่าป่วย)
-                'ลากิจ': '#D4AF37',     // สีทอง
-                'ลาพักร้อน': '#0A2540'  // สีน้ำเงินเข้ม
+                'ลาป่วย': '#E74C3C',    
+                'ลากิจ': '#D4AF37',     
+                'ลาพักร้อน': '#0A2540'  
             };
 
             const eventsArray = globalLeaveData.map(row => {
