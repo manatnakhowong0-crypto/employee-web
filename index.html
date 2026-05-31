@@ -1,544 +1,215 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบข้อมูลพนักงาน</title>
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        /* 🎨 โทนสีน้ำเงิน-ทอง (Blue & Gold Theme) */
-        :root {
-            --theme-blue: #0A2540; /* สีน้ำเงินเข้ม */
-            --theme-blue-hover: #06182a;
-            --theme-gold: #D4AF37; /* สีทอง */
-            --theme-gold-hover: #b5952f;
-            --theme-gold-light: #f9f5e8;
-            --bg-color: #F4F7F9; /* สีพื้นหลังอมฟ้าอ่อนๆ */
-            --card-bg: #FFFFFF;
-            --text-main: #333333;
-            --text-muted: #777777;
-            --border-color: #EAEAEA;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เข้าสู่ระบบ — ระบบพนักงาน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --blue:  #0A2540;
+      --gold:  #D4AF37;
+      --gold-light: #fdf8e8;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { font-size: 15px; }
+    body {
+      font-family: 'Sarabun', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      background: var(--blue);
+      overflow: hidden;
+    }
 
-        body { 
-            font-family: 'Sarabun', sans-serif; 
-            padding: 20px; 
-            background-color: var(--bg-color); 
-            color: var(--text-main);
-            margin: 0;
-        }
+    /* ─── Left panel: branding ─────────────────────────────── */
+    .left-panel {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column;
+      padding: 48px;
+      position: relative;
+      background: linear-gradient(145deg, #06182a 0%, var(--blue) 60%, #123460 100%);
+    }
+    /* Decorative grid */
+    .left-panel::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(212,175,55,.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,175,55,.07) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+    .brand-mark {
+      width: 80px; height: 80px; border-radius: 20px;
+      background: var(--gold);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 600; font-size: 22px; color: var(--blue);
+      margin-bottom: 24px;
+      box-shadow: 0 8px 40px rgba(212,175,55,.35);
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    .brand-title {
+      color: #fff; font-size: 26px; font-weight: 800;
+      text-align: center; margin-bottom: 8px; position: relative; z-index: 1;
+    }
+    .brand-sub {
+      color: rgba(255,255,255,.4); font-size: 12px; letter-spacing: 2px;
+      text-transform: uppercase; text-align: center; position: relative; z-index: 1;
+    }
 
-        .container { 
-            max-width: 1000px; 
-            margin: 0 auto; 
-            background: var(--card-bg); 
-            padding: 30px; 
-            border-radius: 16px; 
-            box-shadow: 0 10px 40px rgba(10, 37, 64, 0.08); 
-            border-top: 6px solid var(--theme-gold);
-            box-sizing: border-box;
-        }
+    /* Decorative orbs */
+    .orb {
+      position: absolute; border-radius: 50%;
+      background: radial-gradient(circle, rgba(212,175,55,.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .orb-1 { width: 300px; height: 300px; bottom: -60px; left: -60px; }
+    .orb-2 { width: 200px; height: 200px; top: 40px; right: 20px; }
 
-        h2 { color: var(--theme-blue); margin-top: 0; font-weight: 700; font-size: 24px; }
-        h3 { color: var(--theme-blue); font-weight: 600; font-size: 20px; }
+    .feature-list { margin-top: 40px; display: flex; flex-direction: column; gap: 12px; position: relative; z-index: 1; }
+    .feature-item {
+      display: flex; align-items: center; gap: 12px;
+      color: rgba(255,255,255,.6); font-size: 13.5px;
+    }
+    .feature-item .fi-icon {
+      width: 30px; height: 30px; border-radius: 7px;
+      background: rgba(212,175,55,.12); border: 1px solid rgba(212,175,55,.2);
+      display: flex; align-items: center; justify-content: center; font-size: 15px;
+      flex-shrink: 0;
+    }
 
-        /* 🔘 เมนู Tabs */
-        .tab-menu { 
-            display: flex; 
-            gap: 8px; 
-            margin-bottom: 25px; 
-            background: #eef2f5; 
-            padding: 8px; 
-            border-radius: 12px; 
-            flex-wrap: wrap; 
-        }
-        .tab-btn { 
-            background-color: transparent; 
-            color: var(--text-muted); 
-            border: none; 
-            padding: 12px 15px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-size: 14px; 
-            font-weight: 500; 
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
-            flex: 1;
-            min-width: 130px;
-            text-align: center;
-        }
-        .tab-btn.active { 
-            background-color: var(--theme-blue); 
-            color: var(--theme-gold); 
-            box-shadow: 0 4px 15px rgba(10, 37, 64, 0.2);
-            font-weight: 600;
-        }
-        .tab-btn:hover:not(.active) { color: var(--theme-blue); background-color: rgba(10,37,64,0.05); }
+    /* ─── Right panel: login form ──────────────────────────── */
+    .right-panel {
+      width: 440px;
+      background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      padding: 48px 40px;
+    }
+    .login-box { width: 100%; }
+    .login-box h1 { font-size: 24px; font-weight: 800; color: var(--blue); margin-bottom: 4px; }
+    .login-box .login-sub { font-size: 14px; color: #64748b; margin-bottom: 32px; }
 
-        /* ✨ อนิเมชันเปลี่ยนหน้า */
-        .page { display: none; }
-        .page.active { 
-            display: block; 
-            animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
-        }
-        @keyframes slideUpFade { 
-            from { opacity: 0; transform: translateY(15px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block; font-size: 13px; font-weight: 700; color: var(--blue); margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%; padding: 12px 16px; border: 1.5px solid #e2e8f0;
+      border-radius: 10px; font-family: inherit; font-size: 14.5px;
+      color: #1e293b; background: #f8fafc; outline: none; transition: all .2s;
+    }
+    .field input:focus {
+      border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212,175,55,.2); background: #fff;
+    }
 
-        /* 📊 กล่องสรุปข้อมูล */
-        .summary-box { 
-            background: linear-gradient(135deg, #ffffff 0%, var(--theme-gold-light) 100%); 
-            border-left: 5px solid var(--theme-gold);
-            border-right: 1px solid var(--border-color);
-            border-top: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-            padding: 15px 20px; 
-            margin-bottom: 20px; 
-            font-size: 16px; 
-            border-radius: 8px; 
-            display: flex;
-            align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-            flex-wrap: wrap;
-        }
-        .count-number { 
-            color: var(--theme-blue); 
-            font-size: 26px; 
-            font-weight: 700; 
-            margin: 0 10px; 
-        }
+    .error-msg {
+      display: none; background: #fef2f2; border: 1px solid #fecaca;
+      color: #dc2626; padding: 10px 14px; border-radius: 8px;
+      font-size: 13px; margin-bottom: 16px; align-items: center; gap: 8px;
+    }
+    .error-msg.show { display: flex; }
 
-        /* 📝 ตัวครอบตารางหลบหน้าจอพังในมือถือ */
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            margin-top: 10px;
-        }
+    .login-btn {
+      width: 100%; padding: 14px; border: none; border-radius: 10px;
+      background: var(--blue); color: #fff;
+      font-family: inherit; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: all .25s;
+      box-shadow: 0 4px 20px rgba(10,37,64,.25); letter-spacing: .3px;
+    }
+    .login-btn:hover { background: #06182a; transform: translateY(-1px); box-shadow: 0 6px 28px rgba(10,37,64,.3); }
+    .login-btn:active { transform: translateY(0); }
 
-        /* 📝 ตารางข้อมูล */
-        .data-table { 
-            width: 100%; 
-            border-collapse: separate; 
-            border-spacing: 0; 
-        }
-        .data-table th, .data-table td { 
-            padding: 12px 15px; 
-            text-align: left; 
-            border-bottom: 1px solid var(--border-color); 
-            white-space: nowrap; 
-        }
-        .data-table th { 
-            background-color: var(--theme-blue); 
-            color: var(--theme-gold); 
-            font-weight: 600; 
-            font-size: 14px;
-            letter-spacing: 0.5px;
-        }
-        .data-table tbody tr { transition: background-color 0.2s ease; }
-        .data-table tbody tr:last-child td { border-bottom: none; }
-        .data-table tbody tr:hover { background-color: var(--theme-gold-light); }
-        
-        a.map-link { 
-            color: var(--theme-blue); 
-            text-decoration: none; 
-            font-weight: 600; 
-            background: var(--theme-gold-light);
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            transition: 0.3s;
-            border: 1px solid #eee;
-            display: inline-block;
-        }
-        a.map-link:hover { background: var(--theme-gold); color: var(--theme-blue); }
+    .hint-box {
+      margin-top: 24px; padding: 14px 16px;
+      background: var(--gold-light); border: 1px solid #e8d97a; border-radius: 10px;
+      font-size: 12px; color: #92400e; line-height: 1.7;
+    }
+    .hint-box strong { color: var(--blue); display: block; margin-bottom: 4px; }
 
-        /* 🚀 ปุ่มอัปเดต */
-        button.update-btn { 
-            background-color: var(--card-bg); 
-            color: var(--theme-blue); 
-            border: 1px solid var(--theme-gold); 
-            padding: 10px 20px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            margin-bottom: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-            width: 100%; 
-        }
-        @media (min-width: 576px) {
-            button.update-btn { width: auto; } 
-        }
-        button.update-btn:hover { 
-            background-color: var(--theme-gold); 
-            color: var(--theme-blue);
-        }
-
-        /* 📝 ฟอร์มลางาน */
-        .leave-form-container { 
-            background: #ffffff; 
-            border: 1px solid var(--theme-gold); 
-            padding: 20px; 
-            border-radius: 12px; 
-            margin-bottom: 30px; 
-            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.08);
-            position: relative;
-            box-sizing: border-box;
-        }
-        .leave-form-container::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 4px;
-            background: linear-gradient(90deg, var(--theme-blue), var(--theme-gold));
-            border-top-left-radius: 12px;
-            border-top-right-radius: 12px;
-        }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { 
-            display: block; 
-            font-weight: 600; 
-            margin-bottom: 6px; 
-            color: var(--theme-blue);
-            font-size: 14px;
-        }
-        .form-group input, .form-group select { 
-            width: 100%; 
-            padding: 12px 15px; 
-            box-sizing: border-box; 
-            border: 1px solid #ddd; 
-            border-radius: 8px; 
-            font-size: 15px; 
-            font-family: inherit;
-            transition: all 0.3s ease;
-            background: #fafafa;
-        }
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: var(--theme-gold);
-            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
-            background: #fff;
-        }
-        
-        /* สลับแถววันลาคู่ตามขนาดจอ */
-        .form-row-dates {
-            display: flex;
-            gap: 15px;
-            flex-direction: column; 
-        }
-        @media (min-width: 576px) {
-            .form-row-dates { flex-direction: row; } 
-        }
-
-        .submit-btn { 
-            background-color: var(--theme-gold); 
-            color: var(--theme-blue); 
-            border: none; 
-            padding: 14px 25px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: 700; 
-            font-size: 16px; 
-            width: 100%;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(212, 175, 55, 0.3);
-            letter-spacing: 0.5px;
-        }
-        .submit-btn:hover { 
-            background-color: var(--theme-gold-hover); 
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(212, 175, 55, 0.4);
-        }
-
-        /* ปฏิทิน */
-        #calendar-container { 
-            margin-top: 20px; 
-            background: white; 
-            padding: 10px; 
-            border: 1px solid var(--border-color); 
-            border-radius: 12px; 
-            box-shadow: 0 2px 15px rgba(0,0,0,0.03);
-            font-size: 13px; 
-        }
-        .fc .fc-button-primary { background-color: var(--theme-blue) !important; border-color: var(--theme-blue) !important; border-radius: 6px; font-family: 'Sarabun'; padding: 6px 10px; font-size: 12px; }
-        .fc .fc-button-primary:hover { background-color: var(--theme-blue-hover) !important; }
-        .fc .fc-toolbar-title { color: var(--theme-blue); font-weight: 700; font-size: 16px !important; }
-
-        /* 📱 จัดการสเกลเพิ่มเติมเมื่อเปิดในมือถือจอเล็ก */
-        @media (max-width: 768px) {
-            body { padding: 10px; }
-            .container { padding: 15px; border-radius: 12px; }
-            h2 { font-size: 18px; }
-            h3 { font-size: 16px; }
-            .tab-btn { padding: 10px; font-size: 13px; }
-            .summary-box { font-size: 14px; padding: 12px; }
-            .count-number { font-size: 22px; }
-        }
-    </style>
+    @media (max-width: 768px) {
+      .left-panel { display: none; }
+      .right-panel { width: 100%; }
+    }
+  </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="tab-menu">
-            <button class="tab-btn active" onclick="switchTab('page-all', this)">📋 ประวัติทั้งหมด</button>
-            <button class="tab-btn" onclick="switchTab('page-today', this)">👥 เข้างานวันนี้</button>
-            <button class="tab-btn" onclick="switchTab('page-search', this)">📅 ค้นหาตามวันที่</button>
-            <button class="tab-btn" onclick="switchTab('page-calendar', this)">🏖️ ระบบแจ้งลา & ปฏิทิน</button>
-        </div>
+  <!-- Left branding -->
+  <div class="left-panel">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="brand-mark">EMS</div>
+    <div class="brand-title">ระบบพนักงาน</div>
+    <div class="brand-sub">Employee Management System</div>
 
-        <button class="update-btn" onclick="loadData()">🔄 อัปเดตข้อมูลล่าสุด</button>
-
-        <div id="page-all" class="page active">
-            <h2>ประวัติการลงเวลาทำงานทั้งหมด</h2>
-            <div class="table-responsive">
-                <table class="data-table">
-                    <thead>
-                        <tr><th>ชื่อพนักงาน</th><th>สถานะ</th><th>วันและเวลา</th><th>สถานที่</th></tr>
-                    </thead>
-                    <tbody id="table-all"><tr><td colspan="4" style="text-align: center; color: #888;">กำลังโหลดข้อมูล... ⏳</td></tr></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="page-today" class="page">
-            <h2>พนักงานที่เข้างานวันนี้ (<span id="today-date-text"></span>)</h2>
-            <div class="summary-box">🎉 วันนี้มีคนมาทำงานแล้ว <span id="today-count" class="count-number">0</span> คน</div>
-            <div class="table-responsive">
-                <table class="data-table">
-                    <thead>
-                        <tr><th style="width: 15%;">ลำดับ</th><th>ชื่อพนักงาน</th><th>เวลาเข้างาน</th></tr>
-                    </thead>
-                    <tbody id="table-today"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="page-search" class="page">
-            <h2>เช็คคนเข้างานตามวันที่</h2>
-            <div class="leave-form-container" style="margin-bottom: 20px; padding: 15px;">
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label style="font-size: 15px;">เลือกวันที่ต้องการตรวจสอบ:</label>
-                    <input type="date" id="search-date-input" onchange="filterByDate()">
-                </div>
-            </div>
-            <div class="summary-box">📌 วันที่เลือกมีคนมาทำงาน <span id="search-count" class="count-number">0</span> คน</div>
-            <div class="table-responsive">
-                <table class="data-table">
-                    <thead>
-                        <tr><th style="width: 15%;">ลำดับ</th><th>ชื่อพนักงาน</th><th>เวลาเข้างาน</th></tr>
-                    </thead>
-                    <tbody id="table-search">
-                        <tr><td colspan="3" style="text-align: center; color: #888;">👆 กรุณาเลือกวันที่ด้านบนเพื่อดูข้อมูล</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="page-calendar" class="page">
-            <div class="leave-form-container">
-                <h3>✍️ ฟอร์มยื่นใบลาพนักงาน</h3>
-                <form id="leaveForm" onsubmit="submitLeave(event)">
-                    <div class="form-group">
-                        <label>ชื่อ-นามสกุล:</label>
-                        <input type="text" id="leave-name" required placeholder="เช่น สมชาย ใจดี">
-                    </div>
-                    <div class="form-group">
-                        <label>ประเภทการลา:</label>
-                        <select id="leave-type" required>
-                            <option value="ลาป่วย">🤒 ลาป่วย</option>
-                            <option value="ลากิจ">💼 ลากิจ</option>
-                            <option value="ลาพักร้อน">🏖️ ลาพักร้อน</option>
-                        </select>
-                    </div>
-                    <div class="form-row-dates">
-                        <div class="form-group" style="flex: 1;">
-                            <label>วันที่เริ่มลา:</label>
-                            <input type="date" id="leave-start" required>
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label>ถึงวันที่ (ลา 1 วันเลือกวันเดิม):</label>
-                            <input type="date" id="leave-end" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="submit-btn">ส่งใบลา 📤</button>
-                </form>
-            </div>
-
-            <h2>📅 ปฏิทินวันลาพนักงาน</h2>
-            <div id="calendar-container"></div>
-        </div>
-
+    <div class="feature-list">
+      <div class="feature-item">
+        <div class="fi-icon">📋</div>
+        <span>ติดตามประวัติการลงเวลาทั้งหมด</span>
+      </div>
+      <div class="feature-item">
+        <div class="fi-icon">📊</div>
+        <span>สรุปตารางมาทำงานรายเดือน</span>
+      </div>
+      <div class="feature-item">
+        <div class="fi-icon">📅</div>
+        <span>ระบบแจ้งลาและปฏิทินวันหยุด</span>
+      </div>
+      <div class="feature-item">
+        <div class="fi-icon">🔍</div>
+        <span>ค้นหาข้อมูลพนักงานตามวันที่</span>
+      </div>
     </div>
+  </div>
 
-    <script>
-        // ใส่ URL ที่คุณแก้ไขเรียบร้อยแล้วตรงนี้
-        const API_URL = "https://script.google.com/macros/s/AKfycbx7U7--gclJrJ9UgsyMeJvS1XtpnfFnke5UwfYKr26mBVNqVVMZSkaWh_dL4Od7C3CK/exec";        
-        
-        let globalAttendanceData = []; 
-        let globalLeaveData = []; 
-        let calendarInstance = null; 
+  <!-- Login form -->
+  <div class="right-panel">
+    <div class="login-box">
+      <h1>ยินดีต้อนรับ 👋</h1>
+      <p class="login-sub">กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ</p>
 
-        function switchTab(pageId, btnElement) {
-            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            
-            document.getElementById(pageId).classList.add('active');
-            btnElement.classList.add('active');
+      <div class="error-msg" id="error-msg">⚠️ <span>ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</span></div>
 
-            if (pageId === 'page-calendar' && calendarInstance) {
-                setTimeout(() => { calendarInstance.render(); }, 100);
-            }
-        }
+      <div class="field">
+        <label for="username">ชื่อผู้ใช้</label>
+        <input type="text" id="username" placeholder="เช่น admin" autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="password">รหัสผ่าน</label>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
 
-        async function loadData() {
-            try {
-                const response = await fetch(API_URL + "?type=json");
-                const data = await response.json();
-                
-                if (Array.isArray(data)) {
-                    globalAttendanceData = data.reverse();
-                    globalLeaveData = [];
-                } else {
-                    globalAttendanceData = data.attendance ? data.attendance.reverse() : [];
-                    globalLeaveData = data.leave || [];
-                }
+      <button class="login-btn" onclick="doLogin()">เข้าสู่ระบบ</button>
 
-                renderAllData();
-                renderTodayData();
-                renderCalendar();
-            } catch (error) {
-                console.error("Error:", error);
-            }
-        }
+      <div class="hint-box">
+        <strong>🔑 ข้อมูลทดสอบ</strong>
+        admin / admin1234 &nbsp;|&nbsp; manager / manager123 &nbsp;|&nbsp; hr / hr1234
+      </div>
+    </div>
+  </div>
 
-        function renderAllData() {
-            const tbody = document.getElementById("table-all");
-            tbody.innerHTML = "";
-            globalAttendanceData.forEach(row => {
-                if(!row['เจ้าของ']) return;
-                tbody.innerHTML += `<tr>
-                    <td>${row['เจ้าของ']}</td> 
-                    <td>${row['ประเภทกิจกรรม']}</td>
-                    <td>${row['เวลาเริ่มต้น']}</td>
-                    <td><a href="${row['สถานที่']}" target="_blank" class="map-link">📍 ดูแผนที่</a></td>
-                </tr>`;
-            });
-        }
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // Redirect ถ้าล็อกอินอยู่แล้ว
+    if (Auth.isLoggedIn()) window.location.href = "pages/dashboard.html";
 
-        function renderTodayData() {
-            const d = new Date();
-            const todayString = d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear(); 
-            document.getElementById("today-date-text").innerText = todayString;
-            processAttendanceByDate(todayString, "table-today", "today-count");
-        }
+    function doLogin() {
+      const u = document.getElementById("username").value.trim();
+      const p = document.getElementById("password").value;
+      const ok = Auth.login(u, p);
+      if (ok) {
+        window.location.href = "pages/dashboard.html";
+      } else {
+        document.getElementById("error-msg").classList.add("show");
+      }
+    }
 
-        function filterByDate() {
-            const dateInput = document.getElementById("search-date-input").value;
-            if(!dateInput) return;
-            const d = new Date(dateInput);
-            const searchString = d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear(); 
-            processAttendanceByDate(searchString, "table-search", "search-count");
-        }
-
-        function processAttendanceByDate(dateString, tableId, countId) {
-            let count = 0;
-            let peopleSet = new Set(); 
-            let tableHTML = "";
-
-            globalAttendanceData.forEach(row => {
-                if(!row['เจ้าของ']) return;
-                const rowDate = row['เวลาเริ่มต้น'] ? row['เวลาเริ่มต้น'].split(',')[0].trim() : '';
-
-                if(rowDate === dateString && !peopleSet.has(row['เจ้าของ'])) {
-                    peopleSet.add(row['เจ้าของ']);
-                    count++;
-                    const timeOnly = row['เวลาเริ่มต้น'].split(',')[1] ? row['เวลาเริ่มต้น'].split(',')[1].trim() : row['เวลาเริ่มต้น'];
-                    tableHTML += `<tr><td style="text-align: center;">${count}</td><td>${row['เจ้าของ']}</td><td>${timeOnly}</td></tr>`;
-                }
-            });
-
-            document.getElementById(countId).innerText = count;
-            document.getElementById(tableId).innerHTML = count === 0 
-                ? `<tr><td colspan='3' style='text-align: center; color: #888;'>ไม่มีประวัติการเข้างานในวันที่ ${dateString}</td></tr>` 
-                : tableHTML;
-        }
-
-        async function submitLeave(event) {
-            event.preventDefault();
-            
-            const name = document.getElementById("leave-name").value;
-            const type = document.getElementById("leave-type").value;
-            const startDate = document.getElementById("leave-start").value;
-            let endDate = document.getElementById("leave-end").value;
-
-            let end = new Date(endDate);
-            end.setDate(end.getDate() + 1);
-            let calendarEndDate = end.toISOString().split('T')[0];
-
-            const payload = {
-                action: "submitLeave",
-                name: name,
-                type: type,
-                startDate: startDate,
-                endDate: calendarEndDate
-            };
-
-            alert("กำลังส่งข้อมูลการลาลงระบบ... ⏳");
-
-            try {
-                await fetch(API_URL, {
-                    method: "POST",
-                    body: JSON.stringify(payload)
-                });
-                
-                alert("🎉 บันทึกวันลาลงระบบสำเร็จ!");
-                document.getElementById("leaveForm").reset();
-                loadData(); 
-            } catch (error) {
-                console.error("Error:", error);
-                alert("เกิดข้อผิดพลาดในการเชื่อมต่อระบบ");
-            }
-        }
-
-        function renderCalendar() {
-            const calendarEl = document.getElementById('calendar-container');
-            
-            const colorMap = {
-                'ลาป่วย': '#E74C3C',    
-                'ลากิจ': '#D4AF37',     
-                'ลาพักร้อน': '#0A2540'  
-            };
-
-            const eventsArray = globalLeaveData.map(row => {
-                return {
-                    title: row['ชื่อพนักงาน'] + ' (' + row['ประเภทการลา'] + ')',
-                    start: row['วันที่เริ่มลา'], 
-                    end: row['ถึงวันที่'],
-                    color: colorMap[row['ประเภทการลา']] || '#9e9e9e'
-                };
-            });
-
-            if (calendarInstance) { calendarInstance.destroy(); }
-
-            calendarInstance = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                locale: 'th',
-                events: eventsArray,
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth'
-                }
-            });
-            calendarInstance.render();
-        }
-
-        window.onload = loadData;
-    </script>
+    // Enter key
+    document.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+  </script>
 </body>
 </html>
