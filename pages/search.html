@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ค้นหาตามวันที่ — ระบบพนักงาน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/pages.css">
+</head>
+<body>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/api.js"></script>
+<script>(function(){try{if(!JSON.parse(sessionStorage.getItem(CONFIG.SESSION_KEY)))throw 0;}catch(e){window.location.href="../index.html";}})()</script>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">EMS</div>
+      <div class="sidebar-logo-text"><div class="title">ระบบพนักงาน</div><div class="sub">Management System</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">หลัก</div>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span>แดชบอร์ด</a>
+      <div class="nav-section-label">รายงาน</div>
+      <a href="attendance.html" class="nav-item"><span class="nav-icon">📊</span>สรุปตารางมาทำงาน</a>
+      <a href="search.html" class="nav-item active"><span class="nav-icon">🔍</span>ค้นหาตามวันที่</a>
+      <a href="employee.html" class="nav-item"><span class="nav-icon">📋</span>ประวัติทั้งหมด</a>
+      <div class="nav-section-label">จัดการ</div>
+      <a href="leave.html" class="nav-item"><span class="nav-icon">🏖️</span>แจ้งลา & ปฏิทิน</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar" id="user-avatar">A</div>
+        <div class="uinfo"><div class="uname" id="user-name">—</div><div class="urole" id="user-role">—</div></div>
+      </div>
+      <button class="logout-btn" onclick="sessionStorage.removeItem(CONFIG.SESSION_KEY);window.location.href='../index.html'">🚪 ออกจากระบบ</button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">🔍 เช็คคนเข้างานตามวันที่</div>
+      <div class="topbar-right">
+        <span class="topbar-date" id="topbar-date"></span>
+        <button class="refresh-btn" id="refresh-btn" onclick="loadData(true)">🔄 อัปเดต</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header"><h1>ค้นหาตามวันที่</h1><p>เลือกวันที่เพื่อดูรายชื่อพนักงานที่เข้างาน</p></div>
+
+      <div class="search-filter">
+        <div>
+          <label>เลือกวันที่ต้องการตรวจสอบ:</label>
+          <input type="date" id="search-date-input">
+        </div>
+      </div>
+
+      <div class="result-badge">📌 พนักงานที่มาทำงาน: <span id="search-count">0</span> คน</div>
+
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th style="width:60px">ลำดับ</th><th>ชื่อพนักงาน</th><th>เวลาเข้างาน</th></tr></thead>
+            <tbody id="table-search">
+              <tr><td colspan="3" class="empty-row">👆 กรุณาเลือกวันที่ด้านบน</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/pages.js"></script>
+<script>
+  (function(){try{const s=JSON.parse(sessionStorage.getItem(CONFIG.SESSION_KEY));document.getElementById("user-avatar").textContent=s.name.charAt(0);document.getElementById("user-name").textContent=s.name;document.getElementById("user-role").textContent=s.role;}catch(e){}}());
+  document.getElementById("topbar-date").textContent = new Date().toLocaleDateString("th-TH",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+  async function loadData(force=false){
+    const btn=document.getElementById("refresh-btn");
+    if(btn){btn.classList.add("loading");btn.textContent="⏳ โหลด...";}
+    const data=await API.fetchAll(force);
+    SearchPage.init(data.attendance);
+    if(btn){btn.classList.remove("loading");btn.textContent="🔄 อัปเดต";}
+  }
+  window.addEventListener("load",()=>loadData());
+</script>
+</body></html>
