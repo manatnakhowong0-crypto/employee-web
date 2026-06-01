@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เบิกเงินล่วงหน้า — ระบบพนักงาน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/pages.css">
+  <style>
+    /* ── Advance-specific styles ── */
+    .adv-alert {
+      display: none;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .adv-alert.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .adv-alert.error   { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+    .amount-wrap {
+      position: relative;
+    }
+    .amount-wrap::before {
+      content: "฿";
+      position: absolute;
+      left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 16px; font-weight: 700; color: #1e3a5f;
+      pointer-events: none;
+    }
+    .amount-wrap input {
+      padding-left: 32px !important;
+    }
+
+    .adv-history-wrap {
+      margin-top: 28px;
+    }
+    .adv-history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .adv-history-table th {
+      background: #1e3a5f;
+      color: #fff;
+      font-weight: 700;
+      padding: 10px 14px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .adv-history-table th:first-child { border-radius: 8px 0 0 0; }
+    .adv-history-table th:last-child  { border-radius: 0 8px 0 0; }
+    .adv-history-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+    .adv-history-table tr:last-child td { border-bottom: none; }
+    .adv-history-table tr:hover td { background: #f8fafc; }
+
+    .adv-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .adv-badge.sent    { background: #dcfce7; color: #166534; }
+    .adv-badge.pending { background: #fef9c3; color: #92400e; }
+
+    .info-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .info-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .info-card-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+    .info-card-label { font-size: 11px; color: #64748b; font-weight: 600; }
+    .info-card-value { font-size: 20px; font-weight: 800; color: #1e3a5f; }
+
+    @media (max-width: 600px) {
+      .adv-history-table { font-size: 12px; }
+      .adv-history-table th, .adv-history-table td { padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/api.js"></script>
+<script>
+(function(){
+  try { if (!JSON.parse(sessionStorage.getItem(CONFIG.SESSION_KEY))) throw 0; }
+  catch(e) { window.location.href = "../index.html"; }
+})();
+</script>
+
+<div class="app-shell">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">EMS</div>
+      <div class="sidebar-logo-text">
+        <div class="title">ระบบพนักงาน</div>
+        <div class="sub">Management System</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">หลัก</div>
+      <a href="dashboard.html"  class="nav-item"><span class="nav-icon">🏠</span>แดชบอร์ด</a>
+      <div class="nav-section-label">รายงาน</div>
+      <a href="attendance.html" class="nav-item"><span class="nav-icon">📊</span>สรุปตารางมาทำงาน</a>
+      <a href="search.html"     class="nav-item"><span class="nav-icon">🔍</span>ค้นหาตามวันที่</a>
+      <a href="employee.html"   class="nav-item"><span class="nav-icon">📋</span>ประวัติทั้งหมด</a>
+      <div class="nav-section-label">จัดการ</div>
+      <a href="leave.html"      class="nav-item"><span class="nav-icon">🏖️</span>แจ้งลา & ปฏิทิน</a>
+      <a href="advance.html"    class="nav-item active"><span class="nav-icon">💵</span>เบิกเงินล่วงหน้า</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar" id="user-avatar">A</div>
+        <div class="uinfo">
+          <div class="uname" id="user-name">—</div>
+          <div class="urole" id="user-role">—</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">🚪 ออกจากระบบ</button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">💵 เบิกเงินล่วงหน้า (Salary Advance)</div>
+      <div class="topbar-right">
+        <span class="topbar-date" id="topbar-date"></span>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <div class="page-header">
+        <h1>ระบบเบิกเงินล่วงหน้า</h1>
+        <p>ยื่นคำขอเบิกเงินเดือนล่วงหน้าสำหรับพนักงาน</p>
+      </div>
+
+      <!-- ── Info cards ── -->
+      <div class="info-cards">
+        <div class="info-card">
+          <div class="info-card-icon">📋</div>
+          <div>
+            <div class="info-card-label">คำขอวันนี้</div>
+            <div class="info-card-value" id="adv-count-today">—</div>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-icon">💰</div>
+          <div>
+            <div class="info-card-label">ยอดรวมวันนี้ (บาท)</div>
+            <div class="info-card-value" id="adv-sum-today">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Form card ── -->
+      <div class="form-card">
+        <div class="form-card-header">✍️ ฟอร์มขอเบิกเงินล่วงหน้า</div>
+        <div class="form-body">
+
+          <!-- Alert -->
+          <div class="adv-alert" id="adv-alert"></div>
+
+          <div class="form-grid">
+            <!-- ชื่อพนักงาน -->
+            <div class="form-group">
+              <label for="adv-name">ชื่อ-นามสกุลพนักงาน</label>
+              <input type="text"
+                     id="adv-name"
+                     list="emp-datalist"
+                     placeholder="เช่น สมชาย ใจดี"
+                     autocomplete="off">
+              <datalist id="emp-datalist"></datalist>
+            </div>
+
+            <!-- จำนวนเงิน -->
+            <div class="form-group">
+              <label for="adv-amount">จำนวนเงินที่ขอเบิก (บาท)</label>
+              <div class="amount-wrap">
+                <input type="number"
+                       id="adv-amount"
+                       min="1"
+                       step="0.01"
+                       placeholder="0.00">
+              </div>
+            </div>
+
+            <!-- วันที่ -->
+            <div class="form-group">
+              <label for="adv-date">วันที่ขอเบิก</label>
+              <input type="date" id="adv-date">
+            </div>
+
+            <!-- เหตุผล -->
+            <div class="form-group full">
+              <label for="adv-reason">เหตุผลการเบิก</label>
+              <input type="text"
+                     id="adv-reason"
+                     placeholder="เช่น ค่าใช้จ่ายฉุกเฉิน / ค่ารักษาพยาบาล">
+            </div>
+          </div>
+
+          <button class="submit-btn" id="advance-submit-btn" style="margin-top:8px">
+            📤 ส่งคำขอเบิก
+          </button>
+        </div>
+      </div>
+
+      <!-- ── History table ── -->
+      <div class="adv-history-wrap form-card" id="adv-history-wrap" style="display:none">
+        <div class="form-card-header">📋 ประวัติคำขอในเซสชันนี้</div>
+        <div class="form-body" style="padding-top:0">
+          <div style="overflow-x:auto">
+            <table class="adv-history-table">
+              <thead>
+                <tr>
+                  <th>วันที่</th>
+                  <th>ชื่อพนักงาน</th>
+                  <th>จำนวน (บาท)</th>
+                  <th>เหตุผล</th>
+                  <th>สถานะ</th>
+                </tr>
+              </thead>
+              <tbody id="adv-history-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="../js/advance.js"></script>
+<script>
+  // ── User info ────────────────────────────────────────────────
+  (function(){
+    try {
+      const s = JSON.parse(sessionStorage.getItem(CONFIG.SESSION_KEY));
+      if (!s) return;
+      document.getElementById("user-avatar").textContent = s.name.charAt(0);
+      document.getElementById("user-name").textContent   = s.name;
+      document.getElementById("user-role").textContent   = s.role;
+    } catch(e){}
+  })();
+
+  // ── Date topbar ──────────────────────────────────────────────
+  function updateDate() {
+    const el = document.getElementById("topbar-date");
+    if (el) el.textContent = new Date().toLocaleDateString("th-TH",
+      { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+  }
+  updateDate(); setInterval(updateDate, 60_000);
+
+  function doLogout() {
+    sessionStorage.removeItem(CONFIG.SESSION_KEY);
+    window.location.href = "../index.html";
+  }
+
+  // ── Info cards (นับจาก history) ─────────────────────────────
+  function updateInfoCards() {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const hist  = JSON.parse(sessionStorage.getItem("advance_history")) || [];
+      const todayItems = hist.filter(h => h.requestDate === today);
+      const sum = todayItems.reduce((acc, h) => acc + (+h.amount || 0), 0);
+
+      const countEl = document.getElementById("adv-count-today");
+      const sumEl   = document.getElementById("adv-sum-today");
+      if (countEl) countEl.textContent = todayItems.length;
+      if (sumEl)   sumEl.textContent   = sum.toLocaleString("th-TH",
+        { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    } catch {}
+  }
+
+  // ── Init ─────────────────────────────────────────────────────
+  window.addEventListener("load", async () => {
+    updateInfoCards();
+    await AdvancePage.init();
+    // อัปเดต cards หลัง init (history อาจโหลดแล้ว)
+    updateInfoCards();
+
+    // อัปเดต cards ทุกครั้งที่มีการส่งฟอร์ม
+    document.getElementById("advance-submit-btn")?.addEventListener("click", () => {
+      setTimeout(updateInfoCards, 800);
+    });
+  });
+</script>
+</body>
+</html>
