@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แจ้งลา & ปฏิทิน — ระบบพนักงาน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/pages.css">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+</head>
+<body>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/api.js"></script>
+
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">🏖️ แจ้งลา & ปฏิทินวันลา</div>
+      <div class="topbar-right">
+        <span class="topbar-date" id="topbar-date"></span>
+        <span class="topbar-auth" id="topbar-auth"></span>
+        <button class="refresh-btn" id="refresh-btn" onclick="loadData(true)">🔄 อัปเดต</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header"><h1>ระบบแจ้งลา</h1><p>ยื่นใบลาและดูปฏิทินวันหยุดพนักงาน</p></div>
+
+      <!-- Leave form -->
+      <div class="form-card" style="margin-bottom:24px">
+        <div class="form-card-header">✍️ ฟอร์มยื่นใบลาพนักงาน</div>
+        <div class="form-body">
+          <form id="leaveForm">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>ชื่อ-นามสกุล</label>
+                <input type="text" id="leave-name" required placeholder="เช่น สมชาย ใจดี">
+              </div>
+              <div class="form-group">
+                <label>ประเภทการลา</label>
+                <select id="leave-type" required>
+                  <option value="ลาป่วย">🤒 ลาป่วย</option>
+                  <option value="ลากิจ">💼 ลากิจ</option>
+                  <option value="ลาพักร้อน">🏖️ ลาพักร้อน</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>วันที่เริ่มลา</label>
+                <input type="date" id="leave-start" required>
+              </div>
+              <div class="form-group">
+                <label>ถึงวันที่ (ลา 1 วัน เลือกวันเดิม)</label>
+                <input type="date" id="leave-end" required>
+              </div>
+              <div class="form-group full">
+                <button type="submit" class="submit-btn" id="leave-submit-btn">ส่งใบลา 📤</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Calendar -->
+      <div class="table-wrap">
+        <div class="table-toolbar"><h3>📅 ปฏิทินวันลาพนักงาน</h3></div>
+        <div class="leave-legend">
+          <div class="leave-legend-item"><div class="leave-dot" style="background:#E74C3C"></div>ลาป่วย</div>
+          <div class="leave-legend-item"><div class="leave-dot" style="background:#D4AF37"></div>ลากิจ</div>
+          <div class="leave-legend-item"><div class="leave-dot" style="background:#0A2540"></div>ลาพักร้อน</div>
+        </div>
+        <div style="padding:16px">
+          <div id="calendar-container"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/pages.js"></script>
+<script>
+  document.getElementById("topbar-date").textContent=new Date().toLocaleDateString("th-TH",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+  async function loadData(force=false){
+    const btn=document.getElementById("refresh-btn");
+    if(btn){btn.classList.add("loading");btn.textContent="⏳ โหลด...";}
+    const data=await API.fetchAll(force);
+    CalendarPage.init(data.leave);
+    if(btn){btn.classList.remove("loading");btn.textContent="🔄 อัปเดต";}
+  }
+  window.addEventListener("load",()=>{
+    if(!Auth.isLoggedIn()){ Auth.requirePage(()=>location.reload()); return; }
+    Shell.mount({ active:"leave" });
+    LeavePage.init();
+    loadData();
+  });
+</script>
+</body></html>

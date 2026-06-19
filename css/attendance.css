@@ -1,0 +1,189 @@
+/* ============================================================
+   attendance.css — ตาราง Attendance Grid (calendar heatmap style)
+   ============================================================ */
+
+/* ─── Outer wrapper ─────────────────────────────────────────── */
+.att-wrap {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* ─── Scroll container ──────────────────────────────────────── */
+#att-grid {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+/* ─── Attendance table ──────────────────────────────────────── */
+.att-table {
+  width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12.5px;
+}
+
+/* Header row */
+.att-table thead tr {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.att-th-name {
+  background: var(--blue);
+  color: var(--gold);
+  padding: 10px 16px;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  min-width: 160px;
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  border-right: 2px solid rgba(255,255,255,.15);
+  font-size: 13px;
+}
+
+.att-th-day {
+  background: var(--blue);
+  color: var(--gold);
+  padding: 8px 4px;
+  text-align: center;
+  font-weight: 600;
+  min-width: 36px;
+  max-width: 36px;
+  width: 36px;
+  border-right: 1px solid rgba(255,255,255,.05);
+  line-height: 1.2;
+  font-size: 12px;
+}
+
+.att-th-day.weekend {
+  color: rgba(255,255,255,.35);
+  background: var(--blue-mid);
+}
+
+.att-th-day .dow {
+  font-size: 9px;
+  font-weight: 400;
+  opacity: .7;
+  display: block;
+}
+
+.att-th-stat {
+  background: var(--blue);
+  color: var(--gold);
+  padding: 10px 10px;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 52px;
+}
+
+/* Body: name column */
+.att-name {
+  padding: 8px 14px;
+  font-weight: 600;
+  color: var(--blue);
+  white-space: nowrap;
+  background: #f8fafc;
+  border-right: 2px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  font-size: 13px;
+}
+
+/* Body: day cells */
+.att-cell {
+  text-align: center;
+  padding: 0;
+  width: 36px; height: 36px;
+  border-right: 1px solid rgba(0,0,0,.04);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 700;
+  vertical-align: middle;
+  transition: transform .1s;
+  cursor: default;
+}
+
+.att-cell.ontime {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.att-cell.late {
+  background: #fef9c3;
+  color: #a16207;
+}
+.att-cell.half {
+  background: #ffedd5;
+  color: #c2410c;
+}
+.att-cell.absent {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.att-cell.weekend {
+  background: #f1f5f9;
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 400;
+}
+.att-cell.leave {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.att-cell:hover:not(.weekend) {
+  transform: scale(1.15);
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  border-radius: 4px;
+}
+
+/* Stat columns */
+.att-stat {
+  text-align: center;
+  padding: 8px 10px;
+  font-weight: 700;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+.att-stat.ontime { color: #16a34a; background: #f0fdf4; }
+.att-stat.late   { color: #a16207; background: #fefce8; }
+.att-stat.half   { color: #c2410c; background: #fff7ed; }
+.att-stat.absent { color: #dc2626; background: #fef2f2; }
+
+/* ─── Legend ────────────────────────────────────────────────── */
+.att-legend {
+  display: flex;
+  gap: 16px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  background: #fafafa;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.legend-dot {
+  width: 14px; height: 14px; border-radius: 3px;
+}
+.legend-dot.ontime { background: #dcfce7; border: 1.5px solid #16a34a; }
+.legend-dot.late   { background: #fef9c3; border: 1.5px solid #a16207; }
+.legend-dot.half   { background: #ffedd5; border: 1.5px solid #c2410c; }
+.legend-dot.absent { background: #fee2e2; border: 1.5px solid #dc2626; }
