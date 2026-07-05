@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แจ้งลา & ปฏิทิน — ระบบพนักงาน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/pages.css">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <style>
+    /* ── Shift Scheduler ── */
+    .sf-emp-list { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+    .sf-emp-row { display:flex; gap:8px; align-items:center; }
+    .sf-emp-row .sf-name { flex:1; padding:8px 10px; border:1px solid #d7e0ea; border-radius:8px; font-family:'Sarabun',sans-serif; font-size:13px; }
+    .sf-emp-row .sf-off { padding:8px 10px; border:1px solid #d7e0ea; border-radius:8px; font-family:'Sarabun',sans-serif; font-size:13px; min-width:150px; }
+    .sf-emp-row .sf-del { width:32px; height:32px; border:1px solid #fecaca; background:#fff5f5; color:#dc2626; border-radius:8px; cursor:pointer; font-weight:700; }
+    .sf-add-btn { background:#eef2ff; border:1px dashed #a5b4fc; color:#4338ca; padding:8px 16px; border-radius:8px; cursor:pointer; font-family:'Sarabun',sans-serif; font-weight:600; font-size:13px; }
+    .sf-settings { display:flex; gap:14px; flex-wrap:wrap; margin:16px 0; }
+    .sf-settings > div { display:flex; flex-direction:column; gap:4px; }
+    .sf-settings label { font-size:12px; color:#475569; font-weight:600; }
+    .sf-settings input { padding:8px 10px; border:1px solid #d7e0ea; border-radius:8px; font-family:'Sarabun',sans-serif; font-size:13px; }
+    .sf-settings input[type=number] { width:130px; }
+    .sf-actions { display:flex; gap:10px; margin-bottom:8px; }
+    .sf-gen-btn { background:#1e3a5f; color:#fff; border:none; padding:11px 24px; border-radius:10px; cursor:pointer; font-family:'Sarabun',sans-serif; font-weight:700; font-size:14px; }
+    .sf-gen-btn:hover { background:#16304f; }
+    .sf-print-btn { background:#0f766e; color:#fff; border:none; padding:11px 22px; border-radius:10px; cursor:pointer; font-family:'Sarabun',sans-serif; font-weight:700; font-size:14px; }
+    .sf-output { margin-top:18px; }
+    .sf-week, .sf-summary { margin-bottom:22px; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; }
+    .sf-week-head { background:#1e3a5f; color:#fff; padding:11px 16px; font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; }
+    .sf-week-sub { font-size:12px; font-weight:500; opacity:.9; background:rgba(255,255,255,.15); padding:3px 10px; border-radius:12px; }
+    .sf-table-scroll { overflow-x:auto; }
+    table.sf-table { width:100%; border-collapse:collapse; font-size:13px; }
+    table.sf-table th, table.sf-table td { padding:9px 12px; border-bottom:1px solid #eef2f7; text-align:left; white-space:nowrap; }
+    table.sf-table th { background:#f8fafc; color:#475569; font-weight:700; }
+    table.sf-table tr.sf-weekend td { background:#fffbeb; }
+    .sf-wk-summary { border-top:2px solid #eef2f7; padding:10px 12px 12px; background:#f8fafc; }
+    .sf-wk-summary-title { font-size:12.5px; font-weight:700; color:#1e3a5f; margin-bottom:6px; }
+    table.sf-mini { border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; }
+    table.sf-mini th { background:#eef2ff; color:#4338ca; text-align:center; font-size:12px; }
+    table.sf-mini td { text-align:center; }
+    table.sf-mini td b { color:#0f766e; }
+    .sf-day { font-weight:700; color:#1e3a5f; }
+    .sf-date { font-weight:400; color:#94a3b8; font-size:11px; }
+    .sf-off-cell { color:#dc2626; } .sf-off-cell i { color:#cbd5e1; font-style:normal; }
+    .sf-on-cell b { color:#0f766e; }
+    .sf-total.sf-hi b { color:#dc2626; }
+    .sf-note { padding:12px 16px; margin:0; font-size:12.5px; color:#64748b; background:#f8fafc; }
+  </style>
+</head>
+<body>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/api.js"></script>
+
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">🏖️ แจ้งลา & ปฏิทินวันลา</div>
+      <div class="topbar-right">
+        <span class="topbar-date" id="topbar-date"></span>
+        <span class="topbar-auth" id="topbar-auth"></span>
+        <button class="refresh-btn" id="refresh-btn" onclick="loadData(true)">🔄 อัปเดต</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header"><h1>ระบบแจ้งลา</h1><p>ยื่นใบลาและดูปฏิทินวันหยุดพนักงาน</p></div>
+
+      <!-- Leave form -->
+      <div class="form-card" style="margin-bottom:24px">
+        <div class="form-card-header">✍️ ฟอร์มยื่นใบลาพนักงาน</div>
+        <div class="form-body">
+          <form id="leaveForm">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>ชื่อ-นามสกุล</label>
+                <input type="text" id="leave-name" required placeholder="เช่น สมชาย ใจดี">
+              </div>
+              <div class="form-group">
+                <label>ประเภทการลา</label>
+                <select id="leave-type" required>
+                  <option value="ลาป่วย">🤒 ลาป่วย</option>
+                  <option value="ลากิจ">💼 ลากิจ</option>
+                  <option value="ลาพักร้อน">🏖️ ลาพักร้อน</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>วันที่เริ่มลา</label>
+                <input type="date" id="leave-start" required>
+              </div>
+              <div class="form-group">
+                <label>ถึงวันที่ (ลา 1 วัน เลือกวันเดิม)</label>
+                <input type="date" id="leave-end" required>
+              </div>
+              <div class="form-group full">
+                <button type="submit" class="submit-btn" id="leave-submit-btn">ส่งใบลา 📤</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Calendar -->
+      <div class="table-wrap">
+        <div class="table-toolbar"><h3>📅 ปฏิทินวันลา & วันหยุดพนักงาน</h3></div>
+        <div class="leave-legend">
+          <div class="leave-legend-item"><div class="leave-dot" style="background:#16a34a"></div>วันหยุดจัดสรร (คลิกเพื่อสลับวัน)</div>
+          <div class="leave-legend-item"><div class="leave-dot" style="background:#E74C3C"></div>ลาป่วย</div>
+          <div class="leave-legend-item"><div class="leave-dot" style="background:#D4AF37"></div>ลากิจ</div>
+          <div class="leave-legend-item"><div class="leave-dot" style="background:#0A2540"></div>ลาพักร้อน</div>
+        </div>
+        <div style="padding:12px 16px 0">
+          <label style="font-size:13px;color:#475569;font-weight:600">เลือกพนักงาน (เพื่อดูวันหยุดของตนเองและสลับวัน):</label>
+          <select id="cal-emp" style="margin-left:8px;padding:7px 10px;border:1px solid #d7e0ea;border-radius:8px;font-family:'Sarabun',sans-serif;min-width:200px"></select>
+        </div>
+        <div style="padding:12px 16px 16px">
+          <div id="calendar-container"></div>
+        </div>
+      </div>
+
+      <!-- ── 🌙 จัดเวรเย็นอัตโนมัติ ── -->
+      <div class="table-card" style="margin-top:24px">
+        <div class="table-toolbar"><h3>🌙 จัดเวรเย็นอัตโนมัติ (Shift Scheduler)</h3></div>
+        <div style="padding:16px">
+          <p style="color:#64748b;font-size:13px;margin:0 0 14px">ใส่พนักงานและวันหยุดประจำสัปดาห์ของแต่ละคน → ระบบจะจัดเวรเย็นให้ยุติธรรม (เฉลี่ยเท่ากัน หลบวันหยุด)</p>
+
+          <div id="sf-emp-list" class="sf-emp-list"></div>
+          <button id="sf-add" class="sf-add-btn">+ เพิ่มพนักงาน</button>
+
+          <div class="sf-settings">
+            <div><label>คนเข้าเวรเย็น/วัน</label><input type="number" id="sf-perday" value="2" min="1" max="6"></div>
+            <div><label>จำนวนสัปดาห์</label><input type="number" id="sf-weeks" value="4" min="1" max="8"></div>
+            <div><label>วันจันทร์สัปดาห์แรก (ไม่บังคับ)</label><input type="date" id="sf-start"></div>
+          </div>
+
+          <div class="sf-actions">
+            <button id="sf-gen" class="sf-gen-btn">⚙️ จัดเวรให้อัตโนมัติ</button>
+            <button id="sf-print-btn" class="sf-print-btn" style="display:none">🖨️ พิมพ์ตารางเวร</button>
+          </div>
+
+          <div id="sf-output" class="sf-output" style="display:none"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/ui-modal.js"></script>
+<script src="../js/shift.js"></script>
+<script src="../js/pages.js"></script>
+<script>
+  document.getElementById("topbar-date").textContent=new Date().toLocaleDateString("th-TH",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+  async function loadData(force=false){
+    const btn=document.getElementById("refresh-btn");
+    if(btn){btn.classList.add("loading");btn.textContent="⏳ โหลด...";}
+    const data=await API.fetchAll(force);
+    CalendarPage.init(data.leave, data.holiday);
+    if(btn){btn.classList.remove("loading");btn.textContent="🔄 อัปเดต";}
+  }
+  window.addEventListener("load",()=>{
+    // หน้านี้เปิดสาธารณะ: ดูปฏิทิน/ส่งใบลาได้โดยไม่ต้องล็อกอิน (กันด้วยรหัสผ่านตอนส่ง)
+    Shell.mount({ active:"leave" });
+    LeavePage.init();
+    if (typeof ShiftScheduler !== "undefined") ShiftScheduler.init();
+    loadData();
+  });
+</script>
+</body></html>

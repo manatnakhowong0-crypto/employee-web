@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ฝ่ายโอนเงิน — สรุปเงินเดือน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/pages.css">
+  <style>
+    /* ── Gate (ล็อกรหัสแอดมิน) ── */
+    .fin-gate {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      min-height:60vh; text-align:center; padding:24px;
+    }
+    .fin-lock { font-size:56px; margin-bottom:8px; }
+    .fin-gate h2 { color:#1e3a5f; margin:0 0 6px; font-size:22px; }
+    .fin-gate p  { color:#64748b; margin:0 0 20px; font-size:14px; }
+    .fin-gate .lock-btn {
+      background:#1e3a5f; color:#fff; border:none; padding:13px 30px; border-radius:11px;
+      font-family:'Sarabun',sans-serif; font-size:15px; font-weight:700; cursor:pointer;
+    }
+    .fin-gate .lock-btn:hover { background:#16304f; }
+
+    /* ── Payroll table ── */
+    .fin-wrap { display:none; }
+    .fin-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+    .fin-total-badge { background:#dcfce7; color:#166534; padding:7px 16px; border-radius:20px; font-weight:800; font-size:14px; }
+    .fin-table-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; overflow:hidden; margin-bottom:24px; }
+    .fin-table-card .card-head { background:#1e3a5f; color:#fff; padding:14px 20px; font-weight:700; font-size:16px; }
+    table.fin-table { width:100%; border-collapse:collapse; font-size:13px; }
+    table.fin-table th, table.fin-table td { padding:10px 12px; border-bottom:1px solid #eef2f7; white-space:nowrap; }
+    table.fin-table th { background:#f8fafc; color:#475569; font-weight:700; text-align:left; position:sticky; top:0; }
+    table.fin-table td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    table.fin-table tr:hover td { background:#f9fbff; }
+    table.fin-table tfoot td { font-weight:800; color:#1e3a5f; background:#f1f5f9; border-top:2px solid #cbd5e1; }
+    .fin-scroll { overflow-x:auto; }
+
+    /* ── Bank copy list ── */
+    .bank-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; overflow:hidden; }
+    .bank-card .card-head { background:#0f766e; color:#fff; padding:14px 20px; font-weight:700; font-size:16px;
+      display:flex; align-items:center; justify-content:space-between; }
+    .bank-list { padding:8px 0; }
+    .bank-row { display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:11px 20px; border-bottom:1px solid #f1f5f9; }
+    .bank-row:last-child { border-bottom:none; }
+    .bank-info { font-size:14px; color:#1e293b; }
+    .bank-info b { color:#0f766e; }
+    .bank-acc { font-family:'Sarabun',monospace; font-weight:700; letter-spacing:.5px; }
+    .copy-btn { background:#ecfdf5; border:1px solid #99f6e4; color:#0f766e; border-radius:8px;
+      padding:6px 13px; font-size:12px; font-weight:700; cursor:pointer; font-family:'Sarabun',sans-serif; white-space:nowrap; }
+    .copy-btn:hover { background:#d1fae5; }
+    .copy-all { background:#fff; color:#0f766e; border:1px solid #fff; border-radius:8px; padding:5px 12px; font-size:12px; font-weight:700; cursor:pointer; }
+    .fin-empty { text-align:center; color:#94a3b8; padding:40px 20px; }
+  </style>
+</head>
+<body>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/ui-modal.js"></script>
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">🏦 ฝ่ายโอนเงิน (สรุปเงินเดือน)</div>
+      <div class="topbar-right">
+        <span class="topbar-date" id="topbar-date"></span>
+        <span class="topbar-auth" id="topbar-auth"></span>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- ── ล็อกรหัสแอดมิน (แสดงก่อนเสมอ) ── -->
+      <div class="fin-gate" id="fin-gate">
+        <div class="fin-lock">🔐</div>
+        <h2>พื้นที่เฉพาะฝ่ายการเงิน</h2>
+        <p>ข้อมูลเงินเดือนและบัญชีธนาคารเป็นความลับ<br>กรุณากรอกรหัสผ่านแอดมินเพื่อเข้าดู</p>
+        <button class="lock-btn" id="fin-unlock-btn">🔓 กรอกรหัสแอดมินเพื่อเข้าดู</button>
+      </div>
+
+      <!-- ── เนื้อหา (โชว์เมื่อรหัสถูก) ── -->
+      <div class="fin-wrap" id="fin-wrap">
+        <div class="page-header">
+          <h1>สรุปยอดเงินเดือน — สำหรับฝ่ายโอนเงิน</h1>
+          <p>ตรวจสอบยอดและบัญชีก่อนโอนให้พนักงาน</p>
+        </div>
+
+        <div class="fin-toolbar">
+          <span class="fin-total-badge" id="fin-total">รวมจ่ายทั้งหมด ฿0</span>
+          <button class="lock-btn" style="padding:8px 18px;font-size:13px" id="fin-refresh">🔄 โหลดข้อมูลใหม่</button>
+        </div>
+
+        <div class="fin-table-card">
+          <div class="card-head">📊 ตารางสรุปเงินเดือน</div>
+          <div class="fin-scroll">
+            <table class="fin-table">
+              <thead>
+                <tr>
+                  <th>ชื่อ-นามสกุล</th>
+                  <th>เงินเดือน</th>
+                  <th>รวมวันทำงาน</th>
+                  <th>ค่าเบี้ยเลี้ยง</th>
+                  <th>โบนัส</th>
+                  <th>ล่วงเวลา</th>
+                  <th>หักอื่นๆ</th>
+                  <th>รวมเงินได้</th>
+                  <th>ธนาคาร</th>
+                  <th>เลขบัญชี</th>
+                </tr>
+              </thead>
+              <tbody id="fin-tbody"></tbody>
+              <tfoot id="fin-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <div class="bank-card">
+          <div class="card-head">
+            <span>💳 รายการบัญชีสำหรับโอนเงิน (ก๊อปปี้ได้)</span>
+            <button class="copy-all" id="copy-all-btn">📋 คัดลอกทั้งหมด</button>
+          </div>
+          <div class="bank-list" id="bank-list"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  document.getElementById("topbar-date").textContent =
+    new Date().toLocaleDateString("th-TH",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+  const FinancePage = (() => {
+    let _rows = [];
+    let _pw = "";
+
+    const COLS = ["เงินเดือน","ค่าเบี้ยเลี้ยง","โบนัส","ล่วงเวลา","หักอื่นๆ","รวมเงินได้"];
+    function num(v){ return Number(String(v==null?"":v).replace(/[^0-9.\-]/g,"")) || 0; }
+    function fmt(n){ return Number(n).toLocaleString("th-TH",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+    async function unlock() {
+      const pw = await PasswordModal.ask({
+        title: "รหัสผ่านแอดมิน", admin: true,
+        hint: "เฉพาะฝ่ายการเงินเท่านั้น"
+      });
+      if (!pw) return;
+      await _load(pw);
+    }
+
+    async function _load(pw) {
+      try {
+        const res = await API.getPayroll({ password: pw });
+        let json = {}; try { json = await res.json(); } catch {}
+        if (json?.code === "bad_password") { PasswordModal.wrongToast("รหัสผ่านแอดมินไม่ถูกต้อง"); return; }
+        if (json?.status !== "ok") { alert("❌ " + (json?.message || "โหลดข้อมูลไม่สำเร็จ")); return; }
+        _pw = pw;
+        _rows = json.rows || [];
+        document.getElementById("fin-gate").style.display = "none";
+        document.getElementById("fin-wrap").style.display = "block";
+        _render();
+      } catch (err) { console.error(err); alert("เชื่อมต่อ Server ไม่ได้"); }
+    }
+
+    function _render() {
+      const tb = document.getElementById("fin-tbody");
+      const tf = document.getElementById("fin-tfoot");
+      const bl = document.getElementById("bank-list");
+
+      if (!_rows.length) {
+        tb.innerHTML = `<tr><td colspan="10" class="fin-empty">ยังไม่มีข้อมูลในชีต "สรุปเงินเดือน"</td></tr>`;
+        tf.innerHTML = ""; bl.innerHTML = `<div class="fin-empty">—</div>`;
+        document.getElementById("fin-total").textContent = "รวมจ่ายทั้งหมด ฿0";
+        return;
+      }
+
+      let grand = 0;
+      tb.innerHTML = _rows.map(r => {
+        const name = r["ชื่อ-นามสกุล"] || r["ชื่อพนักงาน"] || "";
+        const net  = num(r["รวมเงินได้"]) || (num(r["เงินเดือน"])+num(r["ค่าเบี้ยเลี้ยง"])+num(r["โบนัส"])+num(r["ล่วงเวลา"])-num(r["หักอื่นๆ"]));
+        grand += net;
+        return `<tr>
+          <td>${esc(name)}</td>
+          <td class="num">${fmt(num(r["เงินเดือน"]))}</td>
+          <td class="num">${esc(r["รวมวันทำงาน"]||"-")}</td>
+          <td class="num">${fmt(num(r["ค่าเบี้ยเลี้ยง"]))}</td>
+          <td class="num">${fmt(num(r["โบนัส"]))}</td>
+          <td class="num">${fmt(num(r["ล่วงเวลา"]))}</td>
+          <td class="num" style="color:#dc2626">${fmt(num(r["หักอื่นๆ"]))}</td>
+          <td class="num" style="font-weight:800;color:#16a34a">${fmt(net)}</td>
+          <td>${esc(r["ธนาคาร"]||"-")}</td>
+          <td class="bank-acc">${esc(r["เลขบัญชี"]||"-")}</td>
+        </tr>`;
+      }).join("");
+
+      tf.innerHTML = `<tr><td colspan="7" style="text-align:right">รวมเงินได้ทั้งหมด</td>
+        <td class="num">฿${fmt(grand)}</td><td colspan="2"></td></tr>`;
+      document.getElementById("fin-total").textContent = `รวมจ่ายทั้งหมด ฿${fmt(grand)} • ${_rows.length} คน`;
+
+      // รายการบัญชีก๊อปปี้
+      bl.innerHTML = _rows.map((r,i) => {
+        const name = r["ชื่อ-นามสกุล"] || r["ชื่อพนักงาน"] || "";
+        const bank = r["ธนาคาร"] || "-";
+        const acc  = r["เลขบัญชี"] || "-";
+        const net  = num(r["รวมเงินได้"]) || (num(r["เงินเดือน"])+num(r["ค่าเบี้ยเลี้ยง"])+num(r["โบนัส"])+num(r["ล่วงเวลา"])-num(r["หักอื่นๆ"]));
+        const line = `${bank} ${acc} ${name} = ${fmt(net)} บาท`;
+        return `<div class="bank-row">
+          <div class="bank-info"><b>${esc(bank)}</b> <span class="bank-acc">${esc(acc)}</span> — ${esc(name)} • <b>฿${fmt(net)}</b></div>
+          <button class="copy-btn" data-line="${esc(line)}">📋 คัดลอก</button>
+        </div>`;
+      }).join("");
+
+      bl.querySelectorAll(".copy-btn").forEach(b => b.addEventListener("click", () => {
+        _copy(b.dataset.line); b.textContent = "✅ คัดลอกแล้ว"; setTimeout(()=>b.textContent="📋 คัดลอก",1400);
+      }));
+    }
+
+    function _copy(text) {
+      if (navigator.clipboard) navigator.clipboard.writeText(text).catch(()=>_fallbackCopy(text));
+      else _fallbackCopy(text);
+    }
+    function _fallbackCopy(text){ const t=document.createElement("textarea"); t.value=text; document.body.appendChild(t); t.select(); try{document.execCommand("copy");}catch(e){} document.body.removeChild(t); }
+
+    function copyAll() {
+      const lines = _rows.map(r => {
+        const name = r["ชื่อ-นามสกุล"] || r["ชื่อพนักงาน"] || "";
+        const net  = num(r["รวมเงินได้"]) || (num(r["เงินเดือน"])+num(r["ค่าเบี้ยเลี้ยง"])+num(r["โบนัส"])+num(r["ล่วงเวลา"])-num(r["หักอื่นๆ"]));
+        return `${r["ธนาคาร"]||"-"} ${r["เลขบัญชี"]||"-"} ${name} = ${fmt(net)} บาท`;
+      }).join("\n");
+      _copy(lines);
+      const btn = document.getElementById("copy-all-btn");
+      btn.textContent = "✅ คัดลอกทั้งหมดแล้ว"; setTimeout(()=>btn.textContent="📋 คัดลอกทั้งหมด",1600);
+    }
+
+    function init() {
+      document.getElementById("fin-unlock-btn").addEventListener("click", unlock);
+      document.getElementById("fin-refresh").addEventListener("click", () => _pw && _load(_pw));
+      document.getElementById("copy-all-btn").addEventListener("click", copyAll);
+    }
+    return { init };
+  })();
+
+  window.addEventListener("load", () => {
+    // หน้าเปิดสาธารณะได้ แต่ "ไม่แสดงข้อมูล" จนกว่าจะกรอกรหัสแอดมินถูก
+    Shell.mount({ active:"finance" });
+    FinancePage.init();
+  });
+</script>
+</body></html>

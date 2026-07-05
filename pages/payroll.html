@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สลิปเงินเดือน — ระบบพนักงาน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/pages.css">
+  <style>
+    /* ===== Layout ===== */
+    .pay-wrap { display: grid; grid-template-columns: 380px 1fr; gap: 22px; align-items: start; }
+    @media (max-width: 1100px){ .pay-wrap { grid-template-columns: 1fr; } }
+
+    .pay-card { background:#fff; border:1px solid #e8eef5; border-radius:14px; padding:16px 18px; margin-bottom:16px; box-shadow:0 1px 3px rgba(16,42,67,.05); }
+    .pay-card h3 { font-size:14px; font-weight:700; color:#1e3a5f; margin:0 0 12px; display:flex; align-items:center; gap:7px; }
+    .pf-row { margin-bottom:11px; }
+    .pf-row label { display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:4px; }
+    .pf-row input, .pf-row select {
+      width:100%; padding:9px 11px; border:1px solid #d7e0ea; border-radius:9px;
+      font-family:'Sarabun',sans-serif; font-size:13px; color:#0f2640; outline:none; background:#fff;
+    }
+    .pf-row input:focus, .pf-row select:focus { border-color:#1e3a5f; box-shadow:0 0 0 3px rgba(30,58,95,.12); }
+    .pf-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+    /* dynamic line rows */
+    .line-row { display:grid; grid-template-columns: 1fr 64px 56px 84px 30px; gap:6px; align-items:center; margin-bottom:7px; }
+    .line-row.ded { grid-template-columns: 1fr 90px 84px 30px; }
+    .line-row input { padding:7px 8px; font-size:12px; border:1px solid #d7e0ea; border-radius:7px; width:100%; font-family:'Sarabun',sans-serif; }
+    .line-row input.qty-auto { background:#ecfdf5; border-color:#86efac; color:#047857; font-weight:700; text-align:center; }
+    .line-row input.qty-auto::placeholder { color:#10b981; font-weight:400; font-size:10.5px; }
+    .line-row input.amt-calc { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; font-weight:700; text-align:right; }
+    .line-row .li-del { border:none; background:#fee2e2; color:#dc2626; border-radius:7px; height:30px; cursor:pointer; font-size:13px; }
+    .line-row .li-del:hover { background:#fecaca; }
+    .line-head { display:grid; gap:6px; font-size:10.5px; color:#94a3b8; font-weight:700; margin-bottom:5px; text-transform:uppercase; letter-spacing:.3px; }
+    .line-head.inc { grid-template-columns: 1fr 64px 56px 84px 30px; }
+    .line-head.ded { grid-template-columns: 1fr 90px 84px 30px; }
+    .add-line { width:100%; padding:8px; border:1px dashed #9db4cc; background:#f1f6fc; color:#1e3a5f; border-radius:9px; cursor:pointer; font-family:'Sarabun',sans-serif; font-size:12.5px; font-weight:600; margin-top:4px; }
+    .add-line:hover { background:#e3eefb; }
+
+    .ss-toggle { display:flex; align-items:center; gap:9px; font-size:12.5px; color:#475569; margin-top:6px; cursor:pointer; }
+    .ss-toggle input { width:16px; height:16px; }
+
+    .pay-actions { display:flex; flex-direction:column; gap:9px; }
+    .btn-pay { width:100%; padding:12px; border:none; border-radius:10px; font-family:'Sarabun',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:.15s; }
+    .btn-pdf  { background:#1e3a5f; color:#fff; }
+    .btn-pdf:hover { background:#16304f; }
+    .btn-print{ background:#fff; color:#1e3a5f; border:1px solid #1e3a5f; }
+    .btn-print:hover { background:#eef4fb; }
+    .btn-clear{ background:#fff; color:#64748b; border:1px solid #d7e0ea; font-weight:600; font-size:12.5px; padding:9px; }
+    .btn-clear:hover { background:#f8fafc; }
+    .pay-hint { font-size:11.5px; color:#64748b; line-height:1.6; margin-top:8px; }
+
+    /* ===== Preview wrapper ===== */
+    .preview-shell { background:#5b6b7d; border-radius:14px; padding:24px; overflow:auto; }
+    @media (max-width:600px){ .preview-shell { padding:10px; } }
+
+    /* ===== A4 PAYSLIP SHEET (this is what becomes the PDF) ===== */
+    #payslip-sheet {
+      width:210mm; min-height:148mm; margin:0 auto; background:#fff; color:#1a1a1a;
+      padding:14mm 14mm 12mm; box-sizing:border-box;
+      font-family:'Sarabun',sans-serif; font-size:11pt; box-shadow:0 8px 30px rgba(0,0,0,.25);
+    }
+    @media (max-width:900px){ #payslip-sheet { transform-origin: top center; } }
+
+    .ps-top { display:flex; gap:14px; align-items:flex-start; }
+    .ps-logo { width:78px; height:auto; flex-shrink:0; }
+    .ps-co-name { font-size:12pt; font-weight:700; }
+    .ps-co-addr { font-size:9.5pt; color:#333; line-height:1.45; max-width:430px; }
+    .ps-title { text-align:center; font-size:17pt; font-weight:700; margin:6px 0 14px; letter-spacing:.5px; }
+    .ps-title small { display:block; font-size:10pt; font-weight:500; color:#555; letter-spacing:0; }
+
+    .ps-meta { display:grid; grid-template-columns: 1fr 200px; gap:2px 16px; margin-bottom:14px; }
+    .ps-meta .mleft div { font-size:10.5pt; margin-bottom:4px; }
+    .ps-meta .mleft .sub { display:grid; grid-template-columns:1fr 1fr; gap:4px 14px; }
+    .ps-meta b { font-weight:700; }
+
+    .ps-body { display:grid; grid-template-columns: 1fr 200px; gap:16px; align-items:start; }
+
+    table.ps-table { width:100%; border-collapse:collapse; }
+    table.ps-table th, table.ps-table td { border:1px solid #555; padding:6px 9px; font-size:10pt; }
+    table.ps-table th { background:#f3f3f3; text-align:center; font-weight:700; }
+    table.ps-table td.amt { text-align:right; white-space:nowrap; width:74px; }
+    table.ps-table td.lbl { text-align:left; }
+    table.ps-table tr.total td { font-weight:700; background:#ececec; }
+    table.ps-table tr.total td.lbl { text-align:right; }
+
+    .ps-right .rbox-hd { background:#d9d9d9; text-align:center; font-weight:700; padding:8px; font-size:10.5pt; border:1px solid #999; }
+    .ps-right .rbox-bd { text-align:center; padding:14px 8px; font-size:11pt; border:1px solid #999; border-top:none; margin-bottom:14px; min-height:30px; }
+    .ps-right .netpay .rbox-bd { background:#7cb342; color:#fff; font-size:15pt; font-weight:800; }
+
+    .ps-sign { display:grid; grid-template-columns:1fr 1fr; gap:50px; margin-top:30px; }
+    .ps-sign .sig { text-align:center; font-size:9.5pt; }
+    .ps-sign .sig .line { border-top:1px dotted #555; margin:34px 18px 6px; }
+    .ps-foot-note { margin-top:18px; font-size:8pt; color:#777; text-align:center; line-height:1.5; }
+
+    .toast-pay { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1e3a5f; color:#fff; padding:11px 20px; border-radius:10px; font-size:13px; z-index:9999; opacity:0; transition:.25s; pointer-events:none; }
+    .toast-pay.show { opacity:1; }
+
+    /* Print: เหลือเฉพาะใบสลิป */
+    @media print {
+      body * { visibility:hidden !important; }
+      #payslip-sheet, #payslip-sheet * { visibility:visible !important; }
+      #payslip-sheet { position:absolute; left:0; top:0; margin:0; box-shadow:none; width:210mm; }
+      @page { size:A4; margin:8mm; }
+    }
+  </style>
+</head>
+<body>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/logo.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">🧾 ออกสลิปเงินเดือน (Payslip)</div>
+      <div class="topbar-right">
+        <span class="topbar-date" id="topbar-date"></span>
+        <span class="topbar-auth" id="topbar-auth"></span>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <h1>ออกสลิปเงินเดือน</h1>
+        <p>กรอกข้อมูล → ดูตัวอย่างด้านขวา → ดาวน์โหลดเป็น PDF (ดึงวันทำงาน/ยอดเบิกจากระบบได้อัตโนมัติ)</p>
+      </div>
+
+      <div class="pay-wrap">
+        <!-- ===== LEFT: EDITOR ===== -->
+        <div>
+          <!-- Auto-fill -->
+          <div class="pay-card">
+            <h3>⚡ ดึงข้อมูลจากระบบ</h3>
+            <div class="pf-row">
+              <label>เลือกพนักงาน</label>
+              <select id="pf-emp"><option value="">— เลือกพนักงาน —</option></select>
+            </div>
+            <div class="pf-2">
+              <div class="pf-row"><label>เดือน</label>
+                <select id="pf-month"></select>
+              </div>
+              <div class="pf-row"><label>ปี (ค.ศ.)</label>
+                <select id="pf-year"></select>
+              </div>
+            </div>
+            <button class="add-line" id="pf-pull" style="border-style:solid;background:#1e3a5f;color:#fff;border-color:#1e3a5f">🔄 ดึงวันทำงาน + ยอดเบิกของเดือนนี้</button>
+            <div class="pay-hint" id="pf-pullinfo"></div>
+          </div>
+
+          <!-- Employee info -->
+          <div class="pay-card">
+            <h3>👤 ข้อมูลพนักงาน</h3>
+            <div class="pf-row"><label>ชื่อ-สกุล (Employee Name)</label><input id="f-name" placeholder="เช่น Miss Patchareeya Boonsiri"></div>
+            <div class="pf-2">
+              <div class="pf-row"><label>รหัสพนักงาน (Code)</label><input id="f-code" placeholder="—"></div>
+              <div class="pf-row"><label>เลขที่สลิป (Number)</label><input id="f-number" placeholder="SA-001"></div>
+            </div>
+            <div class="pf-2">
+              <div class="pf-row"><label>ตำแหน่ง (Position)</label>
+                <select id="f-pos-sel" style="margin-bottom:6px"></select>
+                <input id="f-position" placeholder="เช่น Promoter">
+              </div>
+              <div class="pf-row"><label>งวด (Period)</label><input id="f-period" placeholder="เช่น พ.ค. 2026"></div>
+            </div>
+            <div class="pf-row"><label>วันที่ออกสลิป (Payslip Date)</label><input type="date" id="f-date"></div>
+            <div class="pf-2">
+              <div class="pf-row"><label>🏦 ธนาคาร (สำหรับใบแจ้งโอน)</label><input id="f-bank" placeholder="เช่น กสิกรไทย"></div>
+              <div class="pf-row"><label>เลขบัญชี</label><input id="f-account" placeholder="เช่น 123-4-56789-0"></div>
+            </div>
+          </div>
+
+          <!-- Income -->
+          <div class="pay-card">
+            <h3>💰 รายได้ (Income)</h3>
+            <div class="line-head inc"><span>รายการ</span><span>เรท</span><span>จำนวน</span><span>ยอด</span><span></span></div>
+            <div id="inc-list"></div>
+            <button class="add-line" id="add-inc">+ เพิ่มรายได้</button>
+            <div class="pay-hint">💚 ช่อง <b>จำนวน</b> ของ "ค่าแรง/ค่าข้าว" จะดึงจากวันเช็คชื่อให้เมื่อกดปุ่ม "ดึงข้อมูล" ด้านบน — หรือ <b>พิมพ์จำนวนเองก็ได้</b> • ช่อง <b>ยอด</b> (สีน้ำเงิน) คิด เรท × จำนวน ให้อัตโนมัติ และรวมยอดทั้งหมดให้ในตัวอย่างด้านขวา</div>
+          </div>
+
+          <!-- Deductions -->
+          <div class="pay-card">
+            <h3>➖ รายการหัก (Deductions)</h3>
+            <div class="line-head ded"><span>รายการ</span><span>หมายเหตุ ( )</span><span>ยอด</span><span></span></div>
+            <div id="ded-list"></div>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <select id="ded-pick" class="add-line" style="flex:1;border-style:solid;background:#fff;color:#1e3a5f">
+                <option value="">+ เลือกรายการหักที่จะเพิ่ม…</option>
+                <option value="Salary advance|เบิกเงินล่วงหน้า">เบิกเงินล่วงหน้า (Salary advance)</option>
+                <option value="Outstanding Payment|ยอดค้างชำระ">ยอดค้างชำระ (Outstanding Payment)</option>
+                <option value="Absence / Late|ขาด-สาย">หักขาด/สาย (Absence / Late)</option>
+                <option value="Fine|ค่าปรับ">ค่าปรับ (Fine)</option>
+                <option value="Equipment / Uniform|อุปกรณ์-ชุดฟอร์ม">อุปกรณ์/ชุดฟอร์ม</option>
+                <option value="Other|อื่น ๆ">อื่น ๆ (กำหนดเอง)</option>
+              </select>
+              <button class="add-line" id="add-ded" style="width:120px">+ ว่างเปล่า</button>
+            </div>
+            <div class="pay-hint">บางคนไม่มีหักพิเศษก็ไม่ต้องเพิ่ม — ค่าเริ่มต้นมีแค่ "เบิกเงินล่วงหน้า" ซึ่งดึงยอดให้อัตโนมัติ</div>
+            <label class="ss-toggle"><input type="checkbox" id="f-ss"> หักประกันสังคม 5% (สูงสุด 750 บาท) อัตโนมัติ</label>
+            <label class="ss-toggle"><input type="checkbox" id="f-wht"> หักภาษี ณ ที่จ่าย <input id="f-wht-amt" type="number" style="width:90px;padding:5px 8px" placeholder="บาท"></label>
+          </div>
+
+          <div class="pay-card">
+            <div class="pay-actions">
+              <button class="btn-pay btn-pdf"   id="btn-pdf">📄 บันทึกเป็น PDF (แนะนำ)</button>
+              <button class="btn-pay btn-print" id="btn-print">⬇️ ลองดาวน์โหลดตรง</button>
+              <button class="btn-pay" id="btn-save-transfer" style="background:#0f766e;color:#fff">💾 บันทึกเข้าใบแจ้งโอน</button>
+              <button class="btn-pay btn-clear" id="btn-clear">ล้างฟอร์ม</button>
+            </div>
+            <div class="pay-hint">💡 กด “บันทึกเป็น PDF” จะ<b>เก็บเข้าใบแจ้งโอนให้อัตโนมัติ</b> (โหลด = บันทึก) หรือกด “บันทึกเข้าใบแจ้งโอน” เองก็ได้ → ไปรวมที่หน้า <b>ฝ่ายโอนเงิน 🏦</b> ให้ฝ่ายการเงินโอนทีเดียว • อย่าลืมใส่ธนาคาร/เลขบัญชี</div>
+          </div>
+        </div>
+
+        <!-- ===== RIGHT: PREVIEW ===== -->
+        <div class="preview-shell">
+          <div id="payslip-sheet"><!-- generated --></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="toast-pay" id="toast-pay"></div>
+
+<script>
+// ── Date topbar ──
+(function(){ const el=document.getElementById("topbar-date"); if(el){ el.textContent=new Date().toLocaleDateString("th-TH",{weekday:"long",day:"numeric",month:"long",year:"numeric"}); } })();
+
+const Payroll = (() => {
+  const COMPANY = {
+    name: "Sanaethai",
+    addr: "204, Soi Wang Doem 8, Wat Arun Subdistrict, Bangkok Yai District, Bangkok 10600"
+  };
+  const THMONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+  // ตำแหน่งงาน (โชว์ไทย + อังกฤษ, ค่าที่ลงสลิป = อังกฤษ ให้เข้ากับฟอร์ม Pay Slip)
+  const POSITIONS = [
+    { th:"พนักงานเรียกแขก", en:"Promoter" },
+    { th:"พนักงานแต่งหน้า",  en:"Makeup Artist" },
+    { th:"พนักงานแต่งตัว",   en:"Stylist" },
+    { th:"พนักงานต้อนรับ",   en:"Receptionist" },
+    { th:"พนักงานเสิร์ฟ",    en:"Server" },
+    { th:"พนักงานขาย",      en:"Sales Staff" },
+    { th:"พนักงานทั่วไป",    en:"General Staff" },
+    { th:"ผู้จัดการ",        en:"Manager" },
+  ];
+
+  let income = [], deduct = [];
+  // วันทำงานที่ดึงจากการเช็คชื่อ (ใช้เป็น "จำนวน" ของค่าแรง/ค่าข้าวอัตโนมัติ)
+  let workDays = { wage:0, food:0, full:0, half:0, present:0, pulled:false };
+
+  function _toast(m){ const t=document.getElementById("toast-pay"); t.textContent=m; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2200); }
+  function fmt(n){ n=Number(n)||0; return n.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:2}); }
+  function num(v){ const n=Number(v); return isNaN(n)?0:n; }
+
+  function _defaults(){
+    income = [
+      { label:"Wage",            rate:550, auto:true, daySource:"wage", qty:0, amount:0 },
+      { label:"Food Allowance",  rate:50,  auto:true, daySource:"food", qty:0, amount:0 },
+      { label:"Additional Income", rate:0, qty:0, amount:0 },   // ค่าพิเศษ — กรอกเอง
+    ];
+    // เริ่มต้นมีแค่ "เบิกล่วงหน้า" เพราะทุกคนมี (ดึงอัตโนมัติ) — รายการอื่นเลือกเพิ่มเอง
+    deduct = [
+      { label:"Salary advance",     note:"", amount:0 },
+    ];
+    workDays = { wage:0, food:0, full:0, half:0, present:0, pulled:false };
+  }
+
+  // จำนวนของแต่ละรายการ (เก็บใน r.qty — ปุ่มดึงข้อมูลจะเติมให้ หรือพิมพ์เองก็ได้)
+  function incQty(r){ return num(r.qty); }
+  function incAmount(r){ const q=incQty(r); return (num(r.rate)>0 && q>0) ? num(r.rate)*q : num(r.amount); }
+  function incLabel(r){ const q=incQty(r); return (num(r.rate)>0 && q>0) ? `${r.label} (${fmt(r.rate)} × ${q})` : r.label; }
+  function dedLabel(r){ return r.note ? `${r.label} (${r.note})` : r.label; }
+
+  function totals(){
+    const inc = income.reduce((s,r)=>s+incAmount(r),0);
+    let ded = deduct.reduce((s,r)=>s+num(r.amount),0);
+    // ประกันสังคม
+    const ss = document.getElementById("f-ss").checked ? Math.min(750, Math.round(inc*0.05)) : 0;
+    const wht = document.getElementById("f-wht").checked ? num(document.getElementById("f-wht-amt").value) : 0;
+    ded += ss + wht;
+    return { inc, ded, ss, wht, net: inc-ded };
+  }
+
+  // ── render editor line inputs ──
+  function _amtCell(r,i){
+    const calc = (num(r.rate)>0 && num(r.qty)>0);
+    return calc
+      ? `<input class="amt-cell amt-calc" data-i="${i}" value="฿${fmt(num(r.rate)*num(r.qty))}" readonly title="คิดจาก เรท × จำนวน">`
+      : `<input class="amt-cell" data-k="amount" data-i="${i}" value="${r.amount||''}" type="number" placeholder="ยอด">`;
+  }
+  function _syncRow(rowEl, i){
+    const r = income[i];
+    const amt = rowEl.querySelector(".amt-cell");
+    if(!amt) return;
+    if(num(r.rate)>0 && num(r.qty)>0){
+      amt.value = "฿"+fmt(num(r.rate)*num(r.qty));
+      amt.readOnly = true; amt.type="text"; amt.classList.add("amt-calc"); amt.removeAttribute("data-k");
+    } else if(amt.readOnly){
+      amt.readOnly = false; amt.type="number"; amt.classList.remove("amt-calc");
+      amt.value = r.amount||""; amt.setAttribute("data-k","amount");
+    }
+  }
+
+  function _renderEditor(){
+    const il = document.getElementById("inc-list");
+    il.innerHTML = income.map((r,i)=>{
+      const qtyCls = r.auto ? "qty-auto" : "";
+      const qtyPh  = r.auto ? "ดึง/พิมพ์ได้" : "จำนวน";
+      const labelInp = r.auto
+        ? `<input data-k="label" data-i="${i}" value="${r.label||""}" readonly style="background:#f8fafc;color:#475569;font-weight:600">`
+        : `<input data-k="label" data-i="${i}" value="${r.label||""}" placeholder="รายการ">`;
+      return `
+        <div class="line-row">
+          ${labelInp}
+          <input data-k="rate" data-i="${i}" value="${r.rate||""}" type="number" placeholder="เรท">
+          <input data-k="qty"  data-i="${i}" class="${qtyCls}" value="${r.qty||""}" type="number" placeholder="${qtyPh}" title="${r.auto?'ดึงจากวันเช็คชื่ออัตโนมัติ — หรือพิมพ์เองก็ได้':''}">
+          ${_amtCell(r,i)}
+          <button class="li-del" data-del="inc" data-i="${i}" title="ลบรายการนี้">✕</button>
+        </div>`;
+    }).join("");
+    const dl = document.getElementById("ded-list");
+    dl.innerHTML = deduct.map((r,i)=>`
+      <div class="line-row ded">
+        <input data-dk="label" data-i="${i}" value="${r.label||""}" placeholder="รายการ">
+        <input data-dk="note"  data-i="${i}" value="${r.note||""}"  placeholder="หมายเหตุ">
+        <input data-dk="amount" data-i="${i}" value="${r.amount||''}" type="number" placeholder="ยอด">
+        <button class="li-del" data-del="ded" data-i="${i}">✕</button>
+      </div>`).join("");
+
+    // อัปเดตยอด + พรีวิว แบบ "ไม่ rebuild" จะได้ไม่หลุดโฟกัสตอนพิมพ์
+    il.querySelectorAll("input").forEach(inp=>inp.addEventListener("input",e=>{
+      const k=e.target.dataset.k; if(!k) return;
+      const i=+e.target.dataset.i;
+      income[i][k]= (k==="label")?e.target.value:num(e.target.value);
+      if(k==="rate"||k==="qty"){ _syncRow(e.target.closest(".line-row"), i); }
+      _renderPreview();
+    }));
+    dl.querySelectorAll("input").forEach(inp=>inp.addEventListener("input",e=>{
+      const i=+e.target.dataset.i,k=e.target.dataset.dk; deduct[i][k]= (k==="amount")?num(e.target.value):e.target.value; _renderPreview();
+    }));
+    document.querySelectorAll(".li-del").forEach(b=>b.addEventListener("click",()=>{
+      const i=+b.dataset.i; (b.dataset.del==="inc"?income:deduct).splice(i,1); _renderEditor(); _renderPreview();
+    }));
+  }
+
+  // ── render the A4 payslip preview ──
+  function _renderPreview(){
+    const g = id => (document.getElementById(id)?.value||"").trim();
+    const t = totals();
+    const rows = Math.max(income.length, deduct.length, 3);
+    let body="";
+    for(let i=0;i<rows;i++){
+      const inc=income[i], ded=deduct[i];
+      body += `<tr>
+        <td class="lbl">${inc?incLabel(inc):"&nbsp;"}</td>
+        <td class="amt">${inc?fmt(incAmount(inc)):"&nbsp;"}</td>
+        <td class="lbl">${ded?dedLabel(ded):"&nbsp;"}</td>
+        <td class="amt">${ded?fmt(num(ded.amount)):"&nbsp;"}</td>
+      </tr>`;
+    }
+    if(t.ss>0) body += `<tr><td class="lbl">&nbsp;</td><td class="amt">&nbsp;</td><td class="lbl">Social Security (5%)</td><td class="amt">${fmt(t.ss)}</td></tr>`;
+    if(t.wht>0) body += `<tr><td class="lbl">&nbsp;</td><td class="amt">&nbsp;</td><td class="lbl">Withholding Tax</td><td class="amt">${fmt(t.wht)}</td></tr>`;
+
+    const dateStr = g("f-date") ? new Date(g("f-date")).toLocaleDateString("en-GB",{day:"numeric",month:"numeric",year:"numeric"}) : "";
+
+    document.getElementById("payslip-sheet").innerHTML = `
+      <div class="ps-top">
+        <img class="ps-logo" src="${(typeof LOGO_DATA_URI!=="undefined")?LOGO_DATA_URI:""}" alt="logo">
+        <div>
+          <div class="ps-co-name">${COMPANY.name}</div>
+          <div class="ps-co-addr">${COMPANY.addr}</div>
+        </div>
+      </div>
+      <div class="ps-title">Pay Slip<small>สลิปเงินเดือน / ใบรับรองการจ่ายค่าจ้าง</small></div>
+
+      <div class="ps-meta">
+        <div class="mleft">
+          <div><b>Employee Name :</b> ${g("f-name")||"&nbsp;"}</div>
+          <div class="sub">
+            <span><b>Employee Code :</b> ${g("f-code")||""}</span>
+            <span><b>Position :</b> ${g("f-position")||""}</span>
+          </div>
+        </div>
+        <div class="mright">
+          <div><b>Number :</b> ${g("f-number")||""}</div>
+          <div><b>Period :</b> ${g("f-period")||""}</div>
+        </div>
+      </div>
+
+      <div class="ps-body">
+        <table class="ps-table">
+          <thead><tr><th>Income</th><th>Amount</th><th>Deduction</th><th>Amount</th></tr></thead>
+          <tbody>
+            ${body}
+            <tr class="total"><td class="lbl">(Total Income)</td><td class="amt">${fmt(t.inc)}</td><td class="lbl">(Total Deduction)</td><td class="amt">${fmt(t.ded)}</td></tr>
+          </tbody>
+        </table>
+        <div class="ps-right">
+          <div class="rbox"><div class="rbox-hd">Payslip Date</div><div class="rbox-bd">${dateStr||"&nbsp;"}</div></div>
+          <div class="rbox netpay"><div class="rbox-hd">Net Pay</div><div class="rbox-bd">${fmt(t.net)}</div></div>
+        </div>
+      </div>
+
+      <div class="ps-sign">
+        <div class="sig"><div class="line"></div>ผู้จ่ายเงิน / Authorized by</div>
+        <div class="sig"><div class="line"></div>ผู้รับเงิน / Received by</div>
+      </div>
+      <div class="ps-foot-note">
+        เอกสารนี้เป็นใบแสดงรายการจ่ายค่าจ้างตาม พ.ร.บ. คุ้มครองแรงงาน พ.ศ. 2541 มาตรา 57 • ออกโดยระบบ Sanae Thai Employee System
+      </div>`;
+    _fitPreview();
+  }
+
+  // ย่อใบสลิปให้พอดีจอเล็ก
+  function _fitPreview(){
+    const sheet=document.getElementById("payslip-sheet");
+    const shell=sheet.parentElement;
+    sheet.style.transform="none";
+    const avail=shell.clientWidth-(shell.clientWidth>700?48:20);
+    const w=sheet.offsetWidth;
+    if(w>avail){ const s=avail/w; sheet.style.transform=`scale(${s})`; sheet.style.marginBottom=`${-(sheet.offsetHeight*(1-s))}px`; }
+  }
+  window.addEventListener("resize", _fitPreview);
+
+  // ── auto-fill from attendance ──
+  function _parseDT(s){ // รองรับ "DD/MM/YYYY, HH:MM:SS" และ "DD/MM/YYYY HH:MM:SS" (มี/ไม่มี เลขศูนย์นำหน้า)
+    if(!s && s!==0) return null;
+    s = String(s).trim();
+    if(!s) return null;
+    // ส่วนวันที่ = ก่อน comma; ถ้าไม่มี comma ใช้ก่อนช่องว่างแรก
+    let datePart, timePart;
+    if(s.indexOf(",")>=0){ const a=s.split(","); datePart=a[0].trim(); timePart=(a[1]||"").trim(); }
+    else { const a=s.split(/\s+/); datePart=a[0].trim(); timePart=(a.slice(1).join(" ")).trim(); }
+    const dmy = datePart.split("/").map(x=>Number(x));
+    if(dmy.length<3 || dmy.some(n=>isNaN(n))) return null;
+    let d=dmy[0], m=dmy[1], y=dmy[2];
+    if(y>2400) y-=543;                 // เผื่อชีตแสดงเป็น พ.ศ. (เช่น 2569)
+    const t=(timePart||"").split(":").map(x=>Number(x));
+    const min=(t[0]||0)*60+(t[1]||0);
+    return { y, m, d, min };
+  }
+
+  async function _loadEmployees(){
+    try{
+      const data = await API.fetchAll();
+      const names=[...new Set((data.attendance||[]).map(r=>(r["เจ้าของ"]||"").trim()).filter(Boolean))].sort();
+      const sel=document.getElementById("pf-emp");
+      sel.innerHTML='<option value="">— เลือกพนักงาน —</option>'+names.map(n=>`<option>${n}</option>`).join("");
+    }catch(e){}
+  }
+
+  async function _pull(){
+    const name=document.getElementById("pf-emp").value;
+    const month=+document.getElementById("pf-month").value;
+    const year=+document.getElementById("pf-year").value;
+    if(!name){ _toast("เลือกพนักงานก่อน"); return; }
+    const info=document.getElementById("pf-pullinfo");
+    info.textContent="⏳ กำลังดึงข้อมูล...";
+    const data = await API.fetchAll(true);
+
+    // นับวันทำงาน: เต็มวัน (เข้าก่อน 11:00) =1, ครึ่งวัน (เข้าหลัง 11:00) =0.5
+    const byDay={};
+    (data.attendance||[]).forEach(r=>{
+      if((r["เจ้าของ"]||"").trim()!==name) return;
+      const dt=_parseDT(r["เวลาเริ่มต้น"]); if(!dt) return;
+      if(dt.y!==year || dt.m!==month) return;
+      const key=dt.d;
+      const isHalf = dt.min > (CONFIG.TIME_LATE||660);
+      // เก็บค่าที่ "ดีที่สุด" ของวันนั้น (ถ้ามาหลายครั้ง)
+      byDay[key]=Math.max(byDay[key]||0, isHalf?0.5:1);
+    });
+    const vals     = Object.values(byDay);
+    const fullDays = vals.filter(v=>v===1).length;        // มาเต็มวัน
+    const halfDays = vals.filter(v=>v===0.5).length;       // มาครึ่งวัน
+    const presentDays = vals.length;                       // มาทั้งหมด (เต็ม+ครึ่ง)
+    const wageDays = fullDays + 0.5*halfDays;               // ค่าแรง: ครึ่งวัน = 0.5
+    const foodDays = fullDays;                              // ค่าข้าว: เฉพาะวันเต็มเท่านั้น
+
+    // ยอดเบิกล่วงหน้าของเดือนนี้ (จากชีตเบิกเงิน) — รวมยอด
+    // วันที่ขอเบิกอาจเป็น "YYYY-MM-DD" หรือ "DD/MM/YYYY ..."
+    function _advMonthYear(ds){
+      if(!ds) return null;
+      ds=String(ds).trim().split(" ")[0];
+      let p;
+      if(ds.indexOf("-")>=0) p=ds.split("-").map(Number);
+      else if(ds.indexOf("/")>=0) p=ds.split("/").map(Number);
+      else return null;
+      if(p.length<3 || p.some(isNaN)) return null;
+      let y,m;
+      if(p[0]>1000){ y=p[0]; m=p[1]; } else { m=p[1]; y=p[2]; }
+      if(y>2400) y-=543;
+      return {m,y};
+    }
+    let advTotal=0, advCount=0;
+    (data.advance||[]).forEach(r=>{
+      const nm=(r["ชื่อพนักงาน"]||"").trim(); if(nm!==name) return;
+      const my=_advMonthYear(r["วันที่ขอเบิก"]) || _advMonthYear(r["วันที่บันทึก"]);
+      if(my && my.m===month && my.y===year){ advTotal+=Number(r["จำนวนเงิน (บาท)"]||r["จำนวนเงิน"]||0)||0; advCount++; }
+    });
+
+    // เติมค่าในฟอร์ม
+    document.getElementById("f-name").value=name;
+    document.getElementById("f-period").value=`${THMONTHS[month-1]} ${year}`;
+    const last=new Date(year,month,0); // วันสุดท้ายของเดือน
+    document.getElementById("f-date").value=`${year}-${String(month).padStart(2,"0")}-${String(last.getDate()).padStart(2,"0")}`;
+
+    // เก็บไว้ใช้แสดงผล + เขียนจำนวนวันลงแถวค่าแรง/ค่าข้าว (พิมพ์ทับได้)
+    workDays = { wage:wageDays, food:foodDays, full:fullDays, half:halfDays, present:presentDays, pulled:true };
+
+    const wageRow = income.find(r=>r.daySource==="wage") || income[0];
+    const foodRow = income.find(r=>r.daySource==="food") || income[1];
+    if(wageRow){ wageRow.label="Wage"; wageRow.qty=wageDays; wageRow.amount=0; }
+    if(foodRow){ foodRow.label="Food Allowance"; foodRow.qty=foodDays; foodRow.amount=0; } // จำนวน = วันเต็ม
+    if(advTotal>0){
+      let row=deduct.find(d=>/advance|เบิก/i.test(d.label));
+      if(!row){ row={label:"Salary advance",note:"",amount:0}; deduct.unshift(row); }
+      row.amount=advTotal;
+    }
+    _renderEditor(); _renderPreview();
+    if(presentDays===0){
+      // ช่วยวินิจฉัย: มีข้อมูลของคนนี้ในเดือนอื่นไหม
+      const monthsFound=[...new Set((data.attendance||[]).filter(r=>(r["เจ้าของ"]||"").trim()===name).map(r=>{const dt=_parseDT(r["เวลาเริ่มต้น"]);return dt?`${String(dt.m).padStart(2,"0")}/${dt.y}`:null;}).filter(Boolean))];
+      info.innerHTML=`⚠️ ไม่พบวันเช็คชื่อของ "<b>${name}</b>" ในเดือน ${THMONTHS[month-1]} ${year}`
+        + (monthsFound.length?`<br>พบข้อมูลในเดือน: <b>${monthsFound.join(", ")}</b> — ลองเปลี่ยนเดือน/ปีให้ตรง`:`<br>ยังไม่มีข้อมูลเช็คชื่อของคนนี้เลย — พิมพ์จำนวนวันเองได้`);
+      _toast("ไม่พบวันเช็คชื่อในเดือนนี้");
+      return;
+    }
+    info.innerHTML=`✅ มาเต็มวัน <b>${fullDays}</b> วัน` + (halfDays?` + ครึ่งวัน <b>${halfDays}</b> วัน`:``) +
+      ` → ค่าแรง <b>${wageDays}</b> วัน • ค่าข้าว <b>${foodDays}</b> วัน (เฉพาะเต็มวัน)` +
+      (advCount?` • เบิกล่วงหน้า ${advCount} ครั้ง รวม <b>฿${fmt(advTotal)}</b>`:` • ไม่พบเบิกล่วงหน้าเดือนนี้`);
+    _toast("ดึงข้อมูลสำเร็จ");
+  }
+
+  // ── บันทึกสลิปนี้เข้า "ใบแจ้งโอน" (ชีตสรุปเงินเดือน) ──
+  //    silent=true → เรียกอัตโนมัติตอนดาวน์โหลด (ไม่มี confirm, แจ้งเบา ๆ)
+  async function _saveTransfer(silent){
+    const name=(document.getElementById("f-name").value||"").trim();
+    if(!name){ if(!silent) _toast("กรุณาใส่ชื่อพนักงานก่อน"); return; }
+    const bank=(document.getElementById("f-bank").value||"").trim();
+    const account=(document.getElementById("f-account").value||"").trim();
+    if(!silent && (!bank || !account)){ if(!confirm("ยังไม่ได้ใส่ธนาคาร/เลขบัญชี — บันทึกต่อไหม? (ฝ่ายโอนจะไม่มีเลขบัญชีให้โอน)")) return; }
+
+    const t=totals();
+    const wageRow=income.find(r=>r.daySource==="wage")||income[0];
+    const foodRow=income.find(r=>r.daySource==="food")||income[1];
+    const salary   = wageRow ? incAmount(wageRow) : 0;                 // ค่าแรงรวม
+    const workDays = wageRow ? incQty(wageRow) : "";                   // จำนวนวันทำงาน
+    const allowance= foodRow ? incAmount(foodRow) : 0;                 // ค่าข้าว
+    let bonus=0; income.forEach(r=>{ if(r!==wageRow && r!==foodRow) bonus+=incAmount(r); }); // รายได้อื่น
+
+    const btn=document.getElementById("btn-save-transfer");
+    let old="";
+    if(!silent){ old=btn.textContent; btn.disabled=true; btn.textContent="⏳ กำลังบันทึก..."; }
+    try{
+      const res=await API.savePayslip({ name, salary, workDays, allowance, bonus, ot:0, deduction:t.ded, net:t.net, bank, account });
+      let json={}; try{ json=await res.json(); }catch{}
+      if(json.status==="ok" || res.ok){
+        _toast(silent ? `💾 เก็บ ${name} เข้าใบแจ้งโอนแล้ว` : `✅ บันทึก ${name} เข้าใบแจ้งโอนแล้ว (สุทธิ ฿${fmt(t.net)}) — ดูที่หน้าฝ่ายโอนเงิน`);
+        if(API.invalidate) API.invalidate();
+      } else if(!silent){ _toast("บันทึกไม่สำเร็จ: "+(json.message||"ลองใหม่อีกครั้ง")); }
+    }catch(err){ console.error(err); if(!silent) _toast("เชื่อมต่อ Server ไม่ได้"); }
+    finally{ if(!silent){ btn.disabled=false; btn.textContent=old; } }
+  }
+
+  // ── วิธีที่เสถียรสุด: เขียนใบสลิปลง iframe แล้วสั่งพิมพ์ (คมชัด รองรับไทย) ──
+  function _printPayslip(){
+    const sheet=document.getElementById("payslip-sheet");
+    if(!sheet) return;
+    _saveTransfer(true);   // 💾 โหลด = เก็บเข้าใบแจ้งโอนอัตโนมัติ
+    const headBits=[...document.querySelectorAll('style, link[rel="stylesheet"]')].map(n=>n.outerHTML).join("\n");
+    const iframe=document.createElement("iframe");
+    iframe.setAttribute("aria-hidden","true");
+    iframe.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;";
+    document.body.appendChild(iframe);
+    const doc=iframe.contentWindow.document;
+    doc.open();
+    doc.write(
+      '<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">'+headBits+
+      '<style>'+
+      '@page{size:A4;margin:8mm}'+
+      'html,body{margin:0;padding:0;background:#fff}'+
+      '#payslip-sheet{transform:none!important;margin:0 auto!important;box-shadow:none!important;min-height:auto!important}'+
+      '</style></head><body>'+sheet.outerHTML+'</body></html>'
+    );
+    doc.close();
+    _toast("⏳ กำลังเตรียม PDF... เลือก \"บันทึกเป็น PDF\" ในหน้าต่างที่เด้งขึ้น");
+    const go=()=>{ try{ iframe.contentWindow.focus(); iframe.contentWindow.print(); }catch(e){ console.error(e);} 
+                   setTimeout(()=>{ try{document.body.removeChild(iframe);}catch(e){} }, 2000); };
+    let done=false; const fire=()=>{ if(done) return; done=true; setTimeout(go,350); };
+    try{
+      if(iframe.contentWindow.document.fonts && iframe.contentWindow.document.fonts.ready){
+        iframe.contentWindow.document.fonts.ready.then(fire);
+      }
+      iframe.onload=fire;
+      setTimeout(fire, 1200);
+    }catch(e){ setTimeout(go,800); }
+  }
+
+  // ทางเลือก: ดาวน์โหลดตรงด้วย html2pdf (โคลนขนาดเต็ม) — ถ้าได้หน้าว่างจะสลับไปวิธีพิมพ์ให้
+  async function _exportPDF(){
+    if(typeof html2pdf==="undefined"){ _printPayslip(); return; }
+    const name=(document.getElementById("f-name").value||"payslip").replace(/[^\wก-๙\-]+/g,"_");
+    const period=(document.getElementById("f-period").value||"").replace(/[^\wก-๙\-]+/g,"_");
+    const sheet=document.getElementById("payslip-sheet");
+    const holder=document.createElement("div");
+    holder.style.cssText="position:fixed;left:0;top:0;z-index:-1;background:#ffffff;width:210mm;margin:0;padding:0;";
+    const clone=sheet.cloneNode(true);
+    clone.style.transform="none"; clone.style.margin="0"; clone.style.boxShadow="none";
+    holder.appendChild(clone); document.body.appendChild(holder);
+    _toast("⏳ กำลังสร้าง PDF...");
+    try { if(document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
+    const img=clone.querySelector("img");
+    if(img && !img.complete){ await new Promise(r=>{ img.onload=r; img.onerror=r; setTimeout(r,1500); }); }
+    html2pdf().set({
+      margin:[6,6,6,6],
+      filename:`payslip_${name}${period?'_'+period:''}.pdf`,
+      image:{ type:"jpeg", quality:0.98 },
+      html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff" },
+      jsPDF:{ unit:"mm", format:"a4", orientation:"portrait" }
+    }).from(clone).save()
+      .then(()=>{ try{document.body.removeChild(holder);}catch(e){} _toast("✅ ดาวน์โหลด PDF แล้ว"); })
+      .catch((err)=>{ try{document.body.removeChild(holder);}catch(e){} console.error(err); _toast("ใช้วิธีพิมพ์แทน..."); _printPayslip(); });
+  }
+
+  function _initPeriod(){
+    const now=new Date();
+    const ms=document.getElementById("pf-month"); ms.innerHTML=THMONTHS.map((m,i)=>`<option value="${i+1}" ${i===now.getMonth()?'selected':''}>${m}</option>`).join("");
+    const ys=document.getElementById("pf-year"); let yo=""; for(let y=now.getFullYear()+1;y>=now.getFullYear()-3;y--) yo+=`<option ${y===now.getFullYear()?'selected':''}>${y}</option>`; ys.innerHTML=yo;
+    // default payslip date = today
+    document.getElementById("f-date").value=now.toISOString().slice(0,10);
+    document.getElementById("f-number").value="SA-001";
+    // ตำแหน่งงาน
+    const ps=document.getElementById("f-pos-sel");
+    ps.innerHTML='<option value="">— เลือกตำแหน่ง —</option>'
+      + POSITIONS.map(p=>`<option value="${p.en}">${p.th} (${p.en})</option>`).join("")
+      + '<option value="__custom__">อื่น ๆ (พิมพ์เอง)</option>';
+  }
+
+  function init(){
+    _defaults(); _initPeriod(); _renderEditor(); _renderPreview(); _loadEmployees();
+    document.getElementById("add-inc").addEventListener("click",()=>{ income.push({label:"",rate:0,qty:0,amount:0}); _renderEditor(); _renderPreview(); });
+    document.getElementById("add-ded").addEventListener("click",()=>{ deduct.push({label:"",note:"",amount:0}); _renderEditor(); _renderPreview(); });
+    document.getElementById("ded-pick").addEventListener("change",e=>{
+      const v=e.target.value; if(!v) return;
+      const label=v.split("|")[0];
+      deduct.push({ label, note:"", amount:0 });
+      _renderEditor(); _renderPreview();
+      e.target.value="";
+    });
+    // เลือกพนักงาน → ใส่ชื่อทันที + ดึงวันทำงานให้อัตโนมัติเลย
+    document.getElementById("pf-emp").addEventListener("change",e=>{
+      if(e.target.value){ document.getElementById("f-name").value=e.target.value; _renderPreview(); _pull(); }
+    });
+    // เปลี่ยนเดือน/ปี → ถ้าเลือกพนักงานไว้แล้ว ดึงใหม่ให้ตรงเดือน
+    document.getElementById("pf-month").addEventListener("change",()=>{ if(document.getElementById("pf-emp").value) _pull(); });
+    document.getElementById("pf-year").addEventListener("change",()=>{ if(document.getElementById("pf-emp").value) _pull(); });
+    // เลือกตำแหน่ง → ใส่ลงช่อง Position (เลือก "อื่น ๆ" เพื่อพิมพ์เอง)
+    document.getElementById("f-pos-sel").addEventListener("change",e=>{
+      const v=e.target.value;
+      if(v==="__custom__"){ const inp=document.getElementById("f-position"); inp.value=""; inp.focus(); }
+      else if(v){ document.getElementById("f-position").value=v; }
+      _renderPreview();
+    });
+    ["f-name","f-code","f-number","f-position","f-period","f-date","f-wht-amt"].forEach(id=>document.getElementById(id).addEventListener("input",_renderPreview));
+    document.getElementById("f-ss").addEventListener("change",_renderPreview);
+    document.getElementById("f-wht").addEventListener("change",_renderPreview);
+    document.getElementById("pf-pull").addEventListener("click",_pull);
+    document.getElementById("btn-pdf").addEventListener("click",_printPayslip);
+    document.getElementById("btn-print").addEventListener("click",_exportPDF);
+    document.getElementById("btn-save-transfer").addEventListener("click",()=>_saveTransfer(false));
+    document.getElementById("btn-clear").addEventListener("click",()=>{ if(confirm("ล้างฟอร์มทั้งหมด?")){ _defaults(); _renderEditor(); _renderPreview(); document.getElementById("f-pos-sel").value=""; } });
+  }
+  return { init };
+})();
+
+window.addEventListener("load", () => {
+  if(!Auth.isLoggedIn()){ Auth.requirePage(()=>location.reload()); return; }
+  Shell.mount({ active:"payroll" });
+  Payroll.init();
+});
+</script>
+</body>
+</html>

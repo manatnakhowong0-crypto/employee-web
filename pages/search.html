@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ค้นหาตามวันที่ — ระบบพนักงาน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/pages.css">
+</head>
+<body>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/api.js"></script>
+
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">🔍 เช็คคนเข้างานตามวันที่</div>
+      <div class="topbar-right">
+        <span class="topbar-date" id="topbar-date"></span>
+        <span class="topbar-auth" id="topbar-auth"></span>
+        <button class="refresh-btn" id="refresh-btn" onclick="loadData(true)">🔄 อัปเดต</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header"><h1>ค้นหาตามวันที่</h1><p>เลือกวันที่เพื่อดูรายชื่อพนักงานที่เข้างาน</p></div>
+
+      <div class="search-filter">
+        <div>
+          <label>เลือกวันที่ต้องการตรวจสอบ:</label>
+          <input type="date" id="search-date-input">
+        </div>
+      </div>
+
+      <div class="result-badge">📌 พนักงานที่มาทำงาน: <span id="search-count">0</span> คน</div>
+
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th style="width:60px">ลำดับ</th><th>ชื่อพนักงาน</th><th>เวลาเข้างาน</th></tr></thead>
+            <tbody id="table-search">
+              <tr><td colspan="3" class="empty-row">👆 กรุณาเลือกวันที่ด้านบน</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/pages.js"></script>
+<script>
+  document.getElementById("topbar-date").textContent = new Date().toLocaleDateString("th-TH",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+  async function loadData(force=false){
+    const btn=document.getElementById("refresh-btn");
+    if(btn){btn.classList.add("loading");btn.textContent="⏳ โหลด...";}
+    const data=await API.fetchAll(force);
+    SearchPage.init(data.attendance);
+    if(btn){btn.classList.remove("loading");btn.textContent="🔄 อัปเดต";}
+  }
+  window.addEventListener("load",()=>{
+    if(!Auth.isLoggedIn()){ Auth.requirePage(()=>location.reload()); return; }
+    Shell.mount({ active:"search" });
+    loadData();
+  });
+</script>
+</body></html>

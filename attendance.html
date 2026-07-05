@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สรุปตารางมาทำงาน — ระบบพนักงาน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/attendance.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <style>
+    .edit-hint-bar {
+      display:none; align-items:center; gap:8px;
+      padding:9px 14px; background:#fffbeb;
+      border:1px solid #fde68a; border-radius:8px;
+      font-size:12.5px; color:#92400e; margin-bottom:10px;
+    }
+    .edit-hint-bar.show { display:flex; }
+    .view-banner {
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+      background:linear-gradient(135deg,#fdf8e8,#faf3d0);
+      border:1px solid #e8d97a; border-radius:12px;
+      padding:12px 16px; margin-bottom:18px; font-size:13px; color:#7a5c10;
+    }
+    .view-banner.hide { display:none; }
+    .view-banner button {
+      margin-left:auto; border:none; background:var(--blue); color:#fff;
+      padding:7px 14px; border-radius:8px; font-family:inherit; font-weight:700;
+      font-size:12.5px; cursor:pointer;
+    }
+    .view-banner button:hover { background:var(--blue-hover); }
+  </style>
+</head>
+<body>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/api.js"></script>
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+
+  <!-- ── MAIN ── -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">📊 สรุปตารางการมาทำงาน</div>
+      <div class="topbar-right">
+        <span class="topbar-date" id="topbar-date"></span>
+        <span class="topbar-auth" id="topbar-auth"></span>
+        <button class="refresh-btn" id="refresh-btn" onclick="loadData(true)">🔄 อัปเดต</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- แบนเนอร์โหมดดูอย่างเดียว (ซ่อนเมื่อล็อกอินแล้ว) -->
+      <div class="view-banner" id="view-banner">
+        👀 กำลังดูตารางการมาทำงาน — เข้าสู่ระบบเพื่อแก้ไขเวลา และเปิดหน้ารายงาน / จัดการ
+        <button onclick="Auth.openLogin()">🔐 เข้าสู่ระบบ</button>
+      </div>
+
+      <!-- ── Stat cards ── -->
+      <div class="stat-cards" style="margin-bottom:20px">
+        <div class="stat-card green">
+          <div class="stat-icon">🟢</div>
+          <div class="stat-info">
+            <div class="stat-label">มาปกติ (&lt; 08:30)</div>
+            <div class="stat-value" id="card-ontime">—</div>
+            <div class="stat-unit">วัน</div>
+          </div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-icon">🟡</div>
+          <div class="stat-info">
+            <div class="stat-label">มาสาย (&gt; 08:30)</div>
+            <div class="stat-value" id="card-late">—</div>
+            <div class="stat-unit">วัน</div>
+          </div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-icon">🟠</div>
+          <div class="stat-info">
+            <div class="stat-label">ครึ่งวัน (&gt; 11:00)</div>
+            <div class="stat-value" id="card-half">—</div>
+            <div class="stat-unit">วัน</div>
+          </div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon">🔴</div>
+          <div class="stat-info">
+            <div class="stat-label">ขาดงาน</div>
+            <div class="stat-value" id="card-absent">—</div>
+            <div class="stat-unit">วัน</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Attendance wrap ── -->
+      <div class="att-wrap">
+        <div class="selector-row">
+          <div class="sel-wrap">
+            <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:5px">พนักงาน:</div>
+            <select class="ui-select" id="att-emp-sel"></select>
+          </div>
+          <div class="sel-wrap">
+            <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:5px">เลือกปี:</div>
+            <select class="ui-select" id="att-year-sel"></select>
+          </div>
+          <div class="sel-wrap" id="month-sel-wrap">
+            <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:5px">เลือกเดือน:</div>
+            <select class="ui-select" id="att-month-sel"></select>
+          </div>
+        </div>
+
+        <div class="edit-hint-bar" id="edit-hint">
+          ✏️
+          <span>คลิกที่เซลล์ใดก็ได้เพื่อ <strong>เพิ่ม / แก้ไข / ลบ</strong> ข้อมูลการมาทำงาน
+          &nbsp;·&nbsp; การแก้ไขจะบันทึกลง Google Sheet ถาวร</span>
+        </div>
+
+        <div id="att-grid">
+          <div style="padding:40px;text-align:center;color:#888">⏳ กำลังโหลดข้อมูล...</div>
+        </div>
+
+        <div class="att-legend">
+          <div class="legend-item"><div class="legend-dot ontime" style="background:#16a34a"></div> ✓ มาปกติ (ก่อน 08:30)</div>
+          <div class="legend-item"><div class="legend-dot late" style="background:#ca8a04"></div> ✓ มาสาย (08:31–11:00)</div>
+          <div class="legend-item"><div class="legend-dot half" style="background:#ea580c"></div> ✓ ครึ่งวัน (หลัง 11:00)</div>
+          <div class="legend-item"><div class="legend-dot absent" style="background:#dc2626"></div> ✕ ขาดงาน</div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="js/attendance.js"></script>
+<script>
+  // ── เมนู + สถานะล็อกอิน ──────────────────────────────────────
+  function renderShell() {
+    Shell.mount({ active: "attendance" });
+    const authEl = document.getElementById("topbar-auth");
+    const banner = document.getElementById("view-banner");
+    if (Auth.isLoggedIn()) {
+      const s = Auth.getSession();
+      authEl.innerHTML = `<span class="chip-user">👤 ${s?.name || "ผู้ดูแล"}</span>
+                          <button onclick="Auth.logout()">ออกจากระบบ</button>`;
+      banner?.classList.add("hide");
+    } else {
+      authEl.innerHTML = `<button onclick="Auth.openLogin()">🔐 เข้าสู่ระบบ</button>`;
+      banner?.classList.remove("hide");
+    }
+  }
+  renderShell();
+
+  // ── นาฬิกาหัวข้อ ─────────────────────────────────────────────
+  function updateDate() {
+    const el = document.getElementById("topbar-date");
+    if (el) el.textContent = new Date().toLocaleDateString("th-TH",
+      { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+  }
+  updateDate(); setInterval(updateDate, 60_000);
+
+  // ── ซิงค์แถบคำแนะนำการแก้ไข ─────────────────────────────────
+  document.addEventListener("change", e => {
+    if (e.target.id !== "att-emp-sel") return;
+    const hint = document.getElementById("edit-hint");
+    if (hint) hint.classList.toggle("show", e.target.value !== "all" && Auth.isLoggedIn());
+  });
+
+  // ── โหลดข้อมูล ──────────────────────────────────────────────
+  async function loadData(force = false) {
+    const btn = document.getElementById("refresh-btn");
+    if (btn) { btn.classList.add("loading"); btn.textContent = "⏳ โหลด..."; }
+    try {
+      const data = await API.fetchAll(force);
+      await AttendancePage.init(data.attendance);
+    } finally {
+      if (btn) { btn.classList.remove("loading"); btn.textContent = "🔄 อัปเดต"; }
+    }
+  }
+  window.addEventListener("load", () => loadData());
+</script>
+</body>
+</html>

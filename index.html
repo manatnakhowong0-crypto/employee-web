@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SANAE THAI · ระบบบริหารพนักงาน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Chonburi&family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#06111f;
+    --navy:#0A2540;
+    --navy-2:#0f3157;
+    --gold:#D4AF37;
+    --gold-2:#f0d27a;
+    --cream:#eef3f8;
+    --muted:rgba(238,243,248,.6);
+    --line:rgba(238,243,248,.14);
+    --ok:#22c55e;
+    --nav-h:74px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'Sarabun',system-ui,sans-serif;background:var(--ink);color:var(--cream);
+    min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+
+  .stage{position:relative;min-height:100vh;display:flex;flex-direction:column;overflow:hidden;isolation:isolate}
+  /* พื้นหลัง cinematic กรมท่า — เปลี่ยนเป็นรูป/วิดีโอร้านได้ที่ .bg-media */
+  .bg-media{position:absolute;inset:0;z-index:-3;background:
+      radial-gradient(120% 90% at 82% 6%, #14477e 0%, transparent 52%),
+      radial-gradient(150% 130% at 8% 104%, #0c2f57 0%, transparent 55%),
+      linear-gradient(180deg,#06111f 0%, #0a2540 52%, #071b31 100%);}
+  .bg-media::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(90deg, rgba(4,10,20,.9) 0%, rgba(4,10,20,.55) 40%, rgba(4,10,20,.12) 72%, rgba(4,10,20,.5) 100%),
+               linear-gradient(0deg, rgba(4,10,20,.85) 0%, transparent 44%)}
+  .bg-thai{position:absolute;inset:0;z-index:-2;opacity:.09;mix-blend-mode:screen;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><g fill='none' stroke='%23D4AF37' stroke-width='1.1'><path d='M60 8c10 14 2 26-6 30 12-2 22 6 22 18 0-14 14-16 22-10-10-10-6-24 4-30-14 6-26-2-30-14-4 12-16 20-30 14 10 6 14 20 4 30 8-6 22-4 22 10 0-12 10-20 22-18-8-4-16-16-6-30'/></g></svg>");
+    background-size:230px}
+  .spark{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+  .sp{position:absolute;bottom:-10px;border-radius:50%;
+    background:radial-gradient(circle,var(--gold-2),var(--gold) 60%,transparent);
+    filter:blur(.3px);opacity:0;animation:rise linear infinite}
+  @keyframes rise{0%{transform:translateY(0);opacity:0}14%{opacity:.8}82%{opacity:.55}
+    100%{transform:translateY(-102vh) translateX(var(--dx,16px));opacity:0}}
+
+  /* NAV */
+  .nav{position:relative;z-index:5;height:var(--nav-h);display:flex;align-items:center;gap:22px;
+    padding:0 clamp(18px,4vw,54px)}
+  .brand{display:flex;align-items:center;gap:12px;flex-shrink:0}
+  .brand-mark{width:44px;height:44px;border-radius:11px;flex-shrink:0;display:grid;place-items:center;
+    font-family:'Anton';font-size:17px;color:var(--navy);
+    background:linear-gradient(135deg,var(--gold-2),var(--gold));box-shadow:0 6px 20px rgba(212,175,55,.32)}
+  .brand-name{font-family:'Anton';letter-spacing:1px;font-size:19px;line-height:.9}
+  .brand-name small{display:block;font-family:'Chonburi';font-size:12px;color:var(--gold);letter-spacing:.4px}
+
+  .menu{display:flex;align-items:center;gap:4px;margin:0 auto}
+  .menu a{position:relative;font-weight:600;font-size:14.5px;letter-spacing:.3px;padding:9px 14px;
+    border-radius:9px;color:var(--muted);transition:color .2s}
+  .menu a:hover,.menu a.active{color:var(--cream)}
+  .menu a.active{color:var(--navy)}
+  .menu a.active::before{content:"";position:absolute;inset:0;border-radius:9px;z-index:-1;
+    background:linear-gradient(135deg,var(--gold-2),var(--gold))}
+  .menu a:not(.active)::after{content:"";position:absolute;left:14px;right:14px;bottom:5px;height:2px;
+    background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .22s}
+  .menu a:not(.active):hover::after{transform:scaleX(1)}
+
+  .nav-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
+  .nav-user{font-size:13px;color:var(--muted);display:none}
+  .nav-user b{color:var(--gold)}
+  .nav-cta{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:14px;padding:10px 18px;
+    border-radius:10px;background:linear-gradient(135deg,var(--gold-2),var(--gold));color:var(--navy);
+    cursor:pointer;transition:.2s}
+  .nav-cta:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(212,175,55,.35)}
+  .burger{display:none;width:44px;height:44px;border-radius:10px;border:1px solid var(--line);
+    background:rgba(255,255,255,.04);color:var(--cream);font-size:20px;cursor:pointer}
+
+  /* HERO */
+  .hero{position:relative;z-index:4;flex:1;display:flex;flex-direction:column;justify-content:center;
+    padding:0 clamp(18px,4vw,64px);max-width:1160px}
+  .eyebrow{display:inline-flex;align-items:center;gap:12px;margin-bottom:20px;font-weight:700;
+    letter-spacing:3px;font-size:12.5px;text-transform:uppercase;color:var(--gold)}
+  .eyebrow .rule{width:46px;height:2px;background:linear-gradient(90deg,var(--gold),transparent)}
+  .title{font-family:'Anton';font-weight:400;line-height:.86;letter-spacing:1px;
+    font-size:clamp(56px,10.5vw,158px);
+    background:linear-gradient(180deg,#fbf3dd 0%,var(--gold) 62%,#a9822a 120%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 6px 40px rgba(212,175,55,.22)}
+  .title-th{font-family:'Chonburi';font-size:clamp(22px,4.2vw,48px);margin-top:8px;letter-spacing:1px}
+  .title-th b{color:var(--gold)}
+  .tagline{margin-top:20px;max-width:560px;font-size:clamp(15px,1.6vw,18px);line-height:1.75;
+    color:var(--muted);font-weight:500}
+  .cta-row{display:flex;flex-wrap:wrap;gap:15px;margin-top:32px}
+  .btn{display:inline-flex;align-items:center;gap:11px;font-weight:800;font-size:16px;padding:16px 30px;
+    border-radius:13px;cursor:pointer;letter-spacing:.3px;border:none;font-family:inherit;
+    transition:transform .18s,box-shadow .2s,filter .2s}
+  .btn .b-ico{font-size:19px}
+  .btn-primary{background:linear-gradient(135deg,var(--gold-2),var(--gold));color:var(--navy);
+    box-shadow:0 12px 30px rgba(212,175,55,.35)}
+  .btn-primary:hover{transform:translateY(-2px);filter:brightness(1.04);box-shadow:0 18px 40px rgba(212,175,55,.45)}
+  .btn-ghost{background:rgba(255,255,255,.05);color:var(--cream);border:1.5px solid var(--gold)}
+  .btn-ghost:hover{transform:translateY(-2px);background:rgba(212,175,55,.12)}
+
+  /* BOTTOM: ฟีเจอร์ + quick access */
+  .bottom{position:relative;z-index:4;padding:24px clamp(18px,4vw,64px) 30px;
+    display:flex;align-items:flex-end;justify-content:space-between;gap:22px;flex-wrap:wrap}
+  .features{display:flex;gap:12px;flex-wrap:wrap}
+  .feat{display:flex;align-items:center;gap:11px;padding:12px 16px;border-radius:12px;
+    border:1px solid var(--line);background:rgba(4,12,24,.4);backdrop-filter:blur(5px);transition:.2s}
+  .feat:hover{border-color:var(--gold);transform:translateY(-2px)}
+  .feat .f-ico{font-size:20px}
+  .feat .f-txt small{display:block;font-size:10.5px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+  .feat .f-txt b{font-size:14px;font-weight:700;color:var(--cream)}
+  .quick{display:flex;gap:12px;align-items:center}
+  .quick a{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:18px;
+    border:1px solid var(--line);background:rgba(4,12,24,.4);color:var(--cream);transition:.2s}
+  .quick a:hover{transform:translateY(-3px);border-color:var(--gold);color:var(--gold);background:rgba(212,175,55,.1)}
+
+  /* CALLOUT: นาฬิกา/วันที่ real-time */
+  .callout{position:absolute;top:calc(var(--nav-h) + 20px);right:clamp(18px,4vw,64px);z-index:4;text-align:right}
+  .callout .k{font-family:'Chonburi';font-size:13px;color:var(--gold);letter-spacing:.5px}
+  .callout .v{font-family:'Anton';font-size:clamp(24px,3.2vw,40px);line-height:.95}
+  .callout .d{font-size:12.5px;color:var(--muted);margin-top:2px}
+
+  /* MOBILE */
+  .m-menu{position:fixed;inset:0;z-index:60;background:rgba(4,10,20,.97);backdrop-filter:blur(6px);
+    display:none;flex-direction:column;padding:26px}
+  .m-menu.open{display:flex}
+  .m-menu .m-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+  .m-menu a{font-family:'Anton';font-size:26px;letter-spacing:1px;color:var(--cream);padding:13px 0;
+    border-bottom:1px solid var(--line)}
+  .m-menu a:hover{color:var(--gold)}
+  .m-close{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);
+    background:rgba(255,255,255,.04);color:var(--cream);font-size:16px;cursor:pointer}
+
+  @media(max-width:1120px){.menu,.nav-user{display:none}.burger{display:grid;place-items:center}.callout{display:none}}
+  @media(max-width:640px){
+    :root{--nav-h:64px}
+    .bottom{flex-direction:column;align-items:stretch}
+    .quick{align-self:flex-start}
+    .btn{flex:1;justify-content:center}
+    .nav-cta{display:none}
+  }
+  @media(prefers-reduced-motion:reduce){.sp{display:none}*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg-media"></div>
+  <div class="bg-thai"></div>
+  <div class="spark" id="spark"></div>
+
+  <nav class="nav">
+    <div class="brand">
+      <div class="brand-mark">ST</div>
+      <div class="brand-name">SANAE THAI<small>ระบบบริหารพนักงาน</small></div>
+    </div>
+    <div class="menu">
+      <a href="index.html" class="active">หน้าแรก</a>
+      <a href="attendance.html">ตารางมาทำงาน</a>
+      <a href="pages/dashboard.html">คนมาวันนี้</a>
+      <a href="pages/leave.html">แจ้งลา</a>
+      <a href="pages/payroll.html">ออกสลิป</a>
+      <a href="pages/finance.html">ฝ่ายโอนเงิน</a>
+    </div>
+    <div class="nav-right">
+      <span class="nav-user" id="navUser"></span>
+      <a class="nav-cta" id="enterBtn" href="pages/dashboard.html">🔐 เข้าสู่ระบบ</a>
+      <button class="burger" id="burger" aria-label="เมนู">☰</button>
+    </div>
+  </nav>
+
+  <div class="callout">
+    <div class="k">เชื่อมต่อ Google Sheets · เรียลไทม์</div>
+    <div class="v" id="clock">--:--</div>
+    <div class="d" id="today">—</div>
+  </div>
+
+  <header class="hero">
+    <div class="eyebrow"><span class="rule"></span>Employee Management System · ครบจบในที่เดียว</div>
+    <h1 class="title">SANAE&nbsp;THAI</h1>
+    <div class="title-th">ระบบบริหาร<b>พนักงาน</b> ร้านเสน่ห์ไทย</div>
+    <p class="tagline">เช็คชื่อเข้า-ออกงานผ่าน LINE · ออกสลิปเงินเดือน · เบิกเงินล่วงหน้า · จัดเวร &amp; วันหยุด · แจ้งลา — จัดการทุกอย่างในที่เดียว เชื่อมต่อ Google Sheets อัปเดตทันที</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" id="mainCta" href="pages/dashboard.html"><span class="b-ico">📊</span> เข้าสู่ระบบจัดการ</a>
+      <a class="btn btn-ghost" href="attendance.html"><span class="b-ico">🗓️</span> ดูตารางการมาทำงาน</a>
+    </div>
+  </header>
+
+  <div class="bottom">
+    <div class="features">
+      <a class="feat" href="pages/dashboard.html"><span class="f-ico">✅</span><span class="f-txt"><small>วันนี้</small><b>เช็คชื่อ / มาทำงาน</b></span></a>
+      <a class="feat" href="pages/payroll.html"><span class="f-ico">🧾</span><span class="f-txt"><small>เงินเดือน</small><b>ออกสลิป</b></span></a>
+      <a class="feat" href="pages/advance.html"><span class="f-ico">💵</span><span class="f-txt"><small>ล่วงหน้า</small><b>เบิกเงิน</b></span></a>
+      <a class="feat" href="pages/leave.html"><span class="f-ico">🌙</span><span class="f-txt"><small>ตารางเวร</small><b>จัดเวร &amp; วันหยุด</b></span></a>
+    </div>
+    <div class="quick">
+      <a href="pages/finance.html" title="ฝ่ายโอนเงิน">🏦</a>
+      <a href="pages/search.html" title="ค้นหาตามวันที่">🔍</a>
+      <a href="README.md" title="คู่มือการใช้งาน">📖</a>
+    </div>
+  </div>
+</div>
+
+<div class="m-menu" id="mMenu">
+  <div class="m-top">
+    <div class="brand"><div class="brand-mark">ST</div><div class="brand-name">SANAE THAI<small>ระบบบริหารพนักงาน</small></div></div>
+    <button class="m-close" id="mClose">✕</button>
+  </div>
+  <a href="attendance.html">ตารางมาทำงาน</a>
+  <a href="pages/dashboard.html">คนมาวันนี้</a>
+  <a href="pages/leave.html">แจ้งลา & ปฏิทิน</a>
+  <a href="pages/advance.html">เบิกเงินล่วงหน้า</a>
+  <a href="pages/payroll.html">ออกสลิปเงินเดือน</a>
+  <a href="pages/finance.html">ฝ่ายโอนเงิน</a>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  // ประกายทองลอย
+  (function(){
+    const box=document.getElementById('spark'); if(!box) return;
+    const N=window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:22;
+    for(let i=0;i<N;i++){
+      const e=document.createElement('div'); e.className='sp';
+      const s=2+Math.random()*3;
+      e.style.left=Math.random()*100+'%'; e.style.width=e.style.height=s+'px';
+      e.style.setProperty('--dx',(Math.random()*60-30)+'px');
+      e.style.animationDuration=(7+Math.random()*7)+'s';
+      e.style.animationDelay=(-Math.random()*12)+'s';
+      box.appendChild(e);
+    }
+  })();
+
+  // นาฬิกา + วันที่ real-time
+  function tick(){
+    const n=new Date();
+    document.getElementById('clock').textContent=n.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('today').textContent=n.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  }
+  tick(); setInterval(tick,1000*30);
+
+  // สะท้อนสถานะล็อกอิน (ถ้าเข้าระบบแล้ว เปลี่ยนปุ่มเป็น "ไปที่แดชบอร์ด")
+  try{
+    if(typeof Auth!=="undefined" && Auth.isLoggedIn()){
+      const s=Auth.getSession();
+      const nu=document.getElementById('navUser'); nu.style.display='inline';
+      nu.innerHTML=`สวัสดี, <b>${(s&&s.name)||'ผู้ดูแล'}</b>`;
+      const cta=document.getElementById('mainCta'); cta.querySelector('.b-ico').textContent='📊';
+      cta.childNodes[cta.childNodes.length-1].textContent=' ไปที่แดชบอร์ด';
+      document.getElementById('enterBtn').textContent='ออกจากระบบ';
+      document.getElementById('enterBtn').removeAttribute('href');
+      document.getElementById('enterBtn').style.cursor='pointer';
+      document.getElementById('enterBtn').onclick=()=>Auth.logout();
+    }
+  }catch(e){}
+
+  // เมนูมือถือ
+  const mMenu=document.getElementById('mMenu');
+  document.getElementById('burger').onclick=()=>mMenu.classList.add('open');
+  document.getElementById('mClose').onclick=()=>mMenu.classList.remove('open');
+  mMenu.querySelectorAll('a').forEach(a=>a.onclick=()=>mMenu.classList.remove('open'));
+</script>
+</body>
+</html>
